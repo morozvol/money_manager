@@ -1,0 +1,7 @@
+/.env
+/db/.env
+/configs.json
+
+/config/
+/command_list.txt
+/Makefile

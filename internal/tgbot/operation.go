@@ -1,0 +1,57 @@
+package tgbot
+
+import (
+	"fmt"
+	"github.com/morozvol/money_manager/internal/model"
+	objs "github.com/morozvol/telego/objects"
+	"strconv"
+)
+
+func (bot *tgbot) addOperation(u *objs.Update) {
+	chatId := u.Message.Chat.Id
+	userId := u.Message.From.Id
+
+	_, err := bot.store.User().Find(userId)
+	if err != nil {
+		bot.help(u)
+		return
+	}
+	uc := userChat{userId, chatId}
+	operation := model.Operation{}
+	bot.userData[uc] = make(chan string)
+	bot.accountsKeyboard(u)
+	if val, err := strconv.ParseInt(<-bot.userData[uc], 10, 64); err == nil {
+		operation.IdAccount = val
+	}
+	bot.operationTypeKeyboard(u)
+	if val, err := strconv.ParseInt(<-bot.userData[uc], 10, 64); err == nil {
+		operation.OperationType = model.OperationType(val)
+	}
+	bot.SendText(chatId, "Введите сумму")
+	if fval, err := strconv.ParseFloat(<-bot.userData[uc], 64); err == nil {
+		operation.Sum = float32(fval)
+	} else {
+		bot.Error(err, "Не удалось привести к float", nil)
+	}
+
+	close(bot.userData[uc])
+	delete(bot.userData, uc)
+
+	err = bot.store.Operation().Create(&operation)
+	if err != nil {
+		bot.Logger.Error(err.Error())
+		bot.SendText(chatId, "Ошибка. На счету недостаточно средств")
+	}
+}
+
+func (bot *tgbot) operationTypeKeyboard(u *objs.Update) {
+
+	kb := bot.CreateInlineKeyboard()
+	kb.AddCallbackButton("Приход", fmt.Sprintf("id currency: %d", 1), 1)
+	kb.AddCallbackButton("Расход", fmt.Sprintf("id currency: %d", 2), 1)
+
+	_, err := bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Выбор типа операции", "", 0, false, false, nil, false, false, kb)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
