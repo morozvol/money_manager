@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/morozvol/money_manager/internal/model"
+	bt "github.com/morozvol/telego"
 	objs "github.com/morozvol/telego/objects"
 	"strconv"
 )
@@ -17,22 +18,20 @@ func (bot *tgbot) addAccount(u *objs.Update) {
 		bot.help(u)
 		return
 	}
-	uc := userChat{userId, chatId}
+	uc := &userChat{userId, chatId}
 	account := model.Account{}
-	bot.userData[uc] = make(chan string)
+	bot.userData[*uc] = make(chan string)
 	bot.SendText(chatId, "Введите название кошелька")
-	account.Name = <-bot.userData[uc]
-	bot.currencyKeyboard(u)
-	if val, err := strconv.ParseInt(<-bot.userData[uc], 10, 64); err == nil {
-		account.Currency.Id = val
-	}
+	account.Name = <-bot.userData[*uc]
+	account.Currency = *bot.currencyKeyboard(uc)
+
 	bot.SendText(chatId, "Введите сумму")
-	if fval, err := strconv.ParseFloat(<-bot.userData[uc], 64); err == nil {
+	if fval, err := strconv.ParseFloat(<-bot.userData[*uc], 64); err == nil {
 		account.Balance = float32(fval)
 	}
 
-	close(bot.userData[uc])
-	delete(bot.userData, uc)
+	close(bot.userData[*uc])
+	delete(bot.userData, *uc)
 
 	account.IdUser = uc.userId
 
@@ -42,18 +41,40 @@ func (bot *tgbot) addAccount(u *objs.Update) {
 	}
 }
 
-func (bot *tgbot) accountsKeyboard(u *objs.Update) {
-	accounts := bot.getUserAccounts(u.Message.From.Id)
+func (bot *tgbot) accountsKeyboard(uc *userChat) *model.Account {
+	accounts := bot.getUserAccounts(uc.userId)
+	if len(accounts) == 0 {
+		bot.youNeedCreateAccount(uc)
+		bot.Logger.Info("accountsKeyboard: Отправлено сообщение пользователю о необходимости создать счёт")
+		return nil
+	}
 	kb := bot.CreateInlineKeyboard()
 	for i, account := range accounts {
 		kb.AddCallbackButton(fmt.Sprintf("%s %s: %.2f", account.Name, account.Currency.Code, account.Balance),
 			fmt.Sprintf("id account: %d", account.Id), i+1)
 	}
 
-	_, err := bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Выбор счёта", "", 0, false, false, nil, false, false, kb)
+	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор счёта", "", 0, false, false, nil, false, false, kb)
 	if err != nil {
-		fmt.Println(err)
+		bot.Error(err, "Account: не удалось отправить сообщение", nil)
+
+		defer func(editor *bt.MessageEditor, messageId int) {
+			_, err := editor.DeleteMessage(messageId)
+			if err != nil {
+				bot.Error(err, "accountsKeyboard: не удалось удалить сообщение", msg)
+
+			}
+		}(bot.GetMsgEditor(uc.chatId), msg.Result.MessageId)
+
+		if val, err := strconv.ParseInt(<-bot.userData[*uc], 10, 64); err == nil {
+			for _, a := range accounts {
+				if a.Id == val {
+					return &a
+				}
+			}
+		}
 	}
+	return nil
 }
 
 func (bot *tgbot) getUserAccounts(userId int) []model.Account {
@@ -80,4 +101,8 @@ func (bot *tgbot) getAccountsInfo(u *objs.Update) {
 		buffer.WriteString(fmt.Sprintf("  %s %s: %.2f\n", account.Name, account.Currency.Code, account.Balance))
 	}
 	bot.SendText(u.Message.Chat.Id, buffer.String())
+}
+
+func (bot *tgbot) youNeedCreateAccount(uc *userChat) {
+	bot.SendText(uc.chatId, "Вам необходимо создать счёт перед добавлением операции. Это можно сделать при помощи /add_account")
 }

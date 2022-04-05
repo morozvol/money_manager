@@ -2,13 +2,15 @@ package tgbot
 
 import (
 	"fmt"
-	objs "github.com/morozvol/telego/objects"
+	"github.com/morozvol/money_manager/internal/model"
+	bt "github.com/morozvol/telego"
+	"strconv"
 )
 
-func (bot *tgbot) currencyKeyboard(u *objs.Update) {
+func (bot *tgbot) currencyKeyboard(uc *userChat) *model.Currency {
 	currencies, err := bot.store.Currency().GetAll()
 	if err != nil {
-		bot.Logger.Error(err.Error())
+		bot.Error(err, "currencyKeyboard: не удалось получить валюты из db", nil)
 	}
 
 	kb := bot.CreateInlineKeyboard()
@@ -17,8 +19,24 @@ func (bot *tgbot) currencyKeyboard(u *objs.Update) {
 			fmt.Sprintf("id currency: %d", currency.Id), i+1)
 	}
 
-	_, err = bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Выбор валюты", "", 0, false, false, nil, false, false, kb)
+	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор валюты", "", 0, false, false, nil, false, false, kb)
 	if err != nil {
-		fmt.Println(err)
+		bot.Error(err, "currencyKeyboard: не удалось отправить сообщение", nil)
 	}
+	defer func(editor *bt.MessageEditor, messageId int) {
+		_, err := editor.DeleteMessage(messageId)
+		if err != nil {
+			bot.Error(err, "currencyKeyboard: не удалось удалить сообщение", msg)
+
+		}
+	}(bot.GetMsgEditor(uc.chatId), msg.Result.MessageId)
+
+	if val, err := strconv.ParseInt(<-bot.userData[*uc], 10, 64); err == nil {
+		for _, c := range currencies {
+			if c.Id == val {
+				return &c
+			}
+		}
+	}
+	return nil
 }

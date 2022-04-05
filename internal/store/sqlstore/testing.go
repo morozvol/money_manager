@@ -21,9 +21,15 @@ func TestDB(t *testing.T, databaseURL string) (*sqlx.DB, func(...string)) {
 
 	return db, func(tables ...string) {
 		if len(tables) > 0 {
-			db.Exec(fmt.Sprintf("TRUNCATE %s CASCADE", strings.Join(tables, ", ")))
+			_, err := db.Exec(fmt.Sprintf("TRUNCATE %s CASCADE", strings.Join(tables, ", ")))
+			if err != nil {
+				return
+			}
 		}
 
-		db.Close()
+		err := db.Close()
+		if err != nil {
+			return
+		}
 	}
 }

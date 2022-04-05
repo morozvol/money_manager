@@ -6,4 +6,5 @@ type Store interface {
 	Account() AccountRepository
 	Operation() OperationRepository
 	Currency() CurrencyRepository
+	Category() CategoryRepository
 }

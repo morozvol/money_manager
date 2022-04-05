@@ -8,7 +8,7 @@ import (
 func (bot *tgbot) SendText(chatId int, text string) {
 	_, err := bot.SendMessage(chatId, text, "", 0, false, false)
 	if err != nil {
-		bot.Logger.Error(fmt.Errorf("Не удалось отправить сообщение", err).Error())
+		bot.Error(err, "SendText: Не удалось отправить сообщение", nil)
 	}
 }
 
@@ -19,7 +19,6 @@ func (bot *tgbot) sendData(uc userChat, data string) {
 	bot.userData[uc] <- data
 }
 func (bot *tgbot) Error(err error, msg string, data interface{}) {
-
 	bot.Logger.Error(fmt.Errorf(msg+" %w %#v", err, data).Error())
 }
 

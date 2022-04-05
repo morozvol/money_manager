@@ -43,7 +43,9 @@ func (r *AccountRepository) FindByUserId(userId int) ([]model.Account, error) {
 
 	rows, err := r.store.db.Queryx(q, userId)
 	if err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
 	}
 
 	var accounts []model.Account

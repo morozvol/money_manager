@@ -17,7 +17,7 @@ func (r *OperationRepository) Create(o *model.Operation) error {
 		"CALL public.apply_operation($1, $2, $3)",
 		o.IdAccount,
 		o.Sum,
-		o.OperationType,
+		o.Category.Id,
 	)
 	return err
 }

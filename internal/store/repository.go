@@ -28,3 +28,9 @@ type CurrencyRepository interface {
 	Find(int) (*model.Currency, error)
 	GetAll() ([]model.Currency, error)
 }
+
+// CategoryRepository ...
+type CategoryRepository interface {
+	Create(category *model.Category) error
+	GetAll(int) ([]model.Category, error)
+}

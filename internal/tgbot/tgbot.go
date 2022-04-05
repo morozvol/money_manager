@@ -9,6 +9,7 @@ import (
 	bt "github.com/morozvol/telego"
 	cfg "github.com/morozvol/telego/configs"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"strings"
 )
@@ -37,6 +38,7 @@ func New() (*tgbot, error) {
 		return nil, err
 	}
 	logger, _ = zap.NewDevelopment()
+	logger.WithOptions(zap.IncreaseLevel(zapcore.DebugLevel))
 	zap.ReplaceGlobals(logger)
 
 	if err := os.Setenv("API_KEY", conf.ApiKey); err != nil {
@@ -64,13 +66,13 @@ func New() (*tgbot, error) {
 		return nil, err
 	}
 
-	db, err := db.New(conf, logger)
+	dataBase, err := db.New(conf, logger)
 	if err != nil {
 		logger.Fatal(err.Error())
 		return nil, err
 	}
 
-	s := sqlstore.New(db)
+	s := sqlstore.New(dataBase)
 
 	return &tgbot{*bot, zap.L(), s, make(map[userChat]chan string)}, nil
 }
@@ -113,8 +115,9 @@ func (bot *tgbot) HandlersRegister() error {
 				bot.sendData(uc, ar[1])
 			case "id currency":
 				bot.sendData(uc, ar[1])
+			case "id category":
+				bot.sendData(uc, ar[1])
 			}
-
 		default:
 			continue
 		}

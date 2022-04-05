@@ -16,26 +16,23 @@ func (bot *tgbot) addOperation(u *objs.Update) {
 		bot.help(u)
 		return
 	}
-	uc := userChat{userId, chatId}
+	uc := &userChat{userId, chatId}
 	operation := model.Operation{}
-	bot.userData[uc] = make(chan string)
-	bot.accountsKeyboard(u)
-	if val, err := strconv.ParseInt(<-bot.userData[uc], 10, 64); err == nil {
-		operation.IdAccount = val
-	}
-	bot.operationTypeKeyboard(u)
-	if val, err := strconv.ParseInt(<-bot.userData[uc], 10, 64); err == nil {
-		operation.OperationType = model.OperationType(val)
-	}
+	bot.userData[*uc] = make(chan string)
+	account := bot.accountsKeyboard(uc)
+
+	operation.IdAccount = account.Id
+	operation.Category = *bot.categoriesKeyboard(uc)
+
 	bot.SendText(chatId, "Введите сумму")
-	if fval, err := strconv.ParseFloat(<-bot.userData[uc], 64); err == nil {
+	if fval, err := strconv.ParseFloat(<-bot.userData[*uc], 64); err == nil {
 		operation.Sum = float32(fval)
 	} else {
-		bot.Error(err, "Не удалось привести к float", nil)
+		bot.Error(err, "addOperation: Не удалось привести к float", nil)
 	}
 
-	close(bot.userData[uc])
-	delete(bot.userData, uc)
+	close(bot.userData[*uc])
+	delete(bot.userData, *uc)
 
 	err = bot.store.Operation().Create(&operation)
 	if err != nil {
@@ -44,14 +41,15 @@ func (bot *tgbot) addOperation(u *objs.Update) {
 	}
 }
 
-func (bot *tgbot) operationTypeKeyboard(u *objs.Update) {
+func (bot *tgbot) operationTypeKeyboard(u *objs.Update) int {
 
 	kb := bot.CreateInlineKeyboard()
-	kb.AddCallbackButton("Приход", fmt.Sprintf("id currency: %d", 1), 1)
-	kb.AddCallbackButton("Расход", fmt.Sprintf("id currency: %d", 2), 1)
+	kb.AddCallbackButton("Приход", fmt.Sprintf("id currency: %d", model.Coming), 1)
+	kb.AddCallbackButton("Расход", fmt.Sprintf("id currency: %d", model.Consumption), 1)
 
-	_, err := bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Выбор типа операции", "", 0, false, false, nil, false, false, kb)
+	msg, err := bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Выбор типа операции", "", 0, false, false, nil, false, false, kb)
 	if err != nil {
-		fmt.Println(err)
+		bot.Error(err, "addOperation: не удалось отправить сообшение", nil)
 	}
+	return msg.Result.MessageId
 }

@@ -12,6 +12,7 @@ type Store struct {
 	accountRepository   *AccountRepository
 	operationRepository *OperationRepository
 	currencyRepository  *CurrencyRepository
+	categoryRepository  *CategoryRepository
 }
 
 // New ...
@@ -71,4 +72,16 @@ func (s *Store) Currency() store.CurrencyRepository {
 	}
 
 	return s.currencyRepository
+}
+
+func (s *Store) Category() store.CategoryRepository {
+	if s.categoryRepository != nil {
+		return s.categoryRepository
+	}
+
+	s.categoryRepository = &CategoryRepository{
+		store: s,
+	}
+
+	return s.categoryRepository
 }
