@@ -3,9 +3,9 @@ module github.com/morozvol/money_manager
 go 1.18
 
 require (
+	github.com/SakoDroid/telego v1.7.1
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/morozvol/telego v1.8.1
 	github.com/spf13/viper v1.10.1
 	go.uber.org/zap v1.21.0
 )
@@ -31,7 +31,7 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -1,9 +1,9 @@
 package tgbot
 
 import (
+	objs "github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/model"
 	"github.com/morozvol/money_manager/internal/store"
-	objs "github.com/morozvol/telego/objects"
 )
 
 func (bot *tgbot) register(u *objs.Update) {

@@ -2,8 +2,8 @@ package tgbot
 
 import (
 	"fmt"
+	objs "github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/model"
-	objs "github.com/morozvol/telego/objects"
 	"strconv"
 )
 

@@ -3,9 +3,9 @@ package tgbot
 import (
 	"bytes"
 	"fmt"
+	bt "github.com/SakoDroid/telego"
+	objs "github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/model"
-	bt "github.com/morozvol/telego"
-	objs "github.com/morozvol/telego/objects"
 	"strconv"
 )
 
@@ -24,11 +24,7 @@ func (bot *tgbot) addAccount(u *objs.Update) {
 	bot.SendText(chatId, "Введите название кошелька")
 	account.Name = <-bot.userData[*uc]
 	account.Currency = *bot.currencyKeyboard(uc)
-
-	bot.SendText(chatId, "Введите сумму")
-	if fval, err := strconv.ParseFloat(<-bot.userData[*uc], 64); err == nil {
-		account.Balance = float32(fval)
-	}
+	account.Balance = bot.getFloat(uc, "Введите сумму")
 
 	close(bot.userData[*uc])
 	delete(bot.userData, *uc)
@@ -57,20 +53,19 @@ func (bot *tgbot) accountsKeyboard(uc *userChat) *model.Account {
 	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор счёта", "", 0, false, false, nil, false, false, kb)
 	if err != nil {
 		bot.Error(err, "Account: не удалось отправить сообщение", nil)
+	}
+	defer func(editor *bt.MessageEditor, messageId int) {
+		_, err := editor.DeleteMessage(messageId)
+		if err != nil {
+			bot.Error(err, "accountsKeyboard: не удалось удалить сообщение", msg)
 
-		defer func(editor *bt.MessageEditor, messageId int) {
-			_, err := editor.DeleteMessage(messageId)
-			if err != nil {
-				bot.Error(err, "accountsKeyboard: не удалось удалить сообщение", msg)
+		}
+	}(bot.GetMsgEditor(uc.chatId), msg.Result.MessageId)
 
-			}
-		}(bot.GetMsgEditor(uc.chatId), msg.Result.MessageId)
-
-		if val, err := strconv.ParseInt(<-bot.userData[*uc], 10, 64); err == nil {
-			for _, a := range accounts {
-				if a.Id == val {
-					return &a
-				}
+	if val, err := strconv.ParseInt(<-bot.userData[*uc], 10, 64); err == nil {
+		for _, a := range accounts {
+			if a.Id == val {
+				return &a
 			}
 		}
 	}

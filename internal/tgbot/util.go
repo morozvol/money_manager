@@ -3,6 +3,8 @@ package tgbot
 import (
 	"fmt"
 	"github.com/morozvol/money_manager/internal/model"
+	"strconv"
+	"strings"
 )
 
 func (bot *tgbot) SendText(chatId int, text string) {
@@ -29,4 +31,15 @@ func getCurrencyById(id int64, currencies []model.Currency) model.Currency {
 		}
 	}
 	return model.Currency{}
+}
+func (bot *tgbot) getFloat(uc *userChat, text string) float32 {
+	bot.SendText(uc.chatId, text)
+	s := <-bot.userData[*uc]
+	s = strings.Replace(s, ",", ".", -1)
+	val, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		bot.Error(err, "getFloat: Не удалось привести к float", nil)
+		return 0
+	}
+	return float32(val)
 }

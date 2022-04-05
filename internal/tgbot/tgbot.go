@@ -2,12 +2,12 @@ package tgbot
 
 import (
 	"fmt"
+	bt "github.com/SakoDroid/telego"
+	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/morozvol/money_manager/internal/config"
 	"github.com/morozvol/money_manager/internal/store"
 	"github.com/morozvol/money_manager/internal/store/sqlstore"
 	"github.com/morozvol/money_manager/internal/store/sqlstore/db"
-	bt "github.com/morozvol/telego"
-	cfg "github.com/morozvol/telego/configs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
