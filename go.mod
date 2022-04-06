@@ -6,11 +6,14 @@ require (
 	github.com/SakoDroid/telego v1.7.2
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jmoiron/sqlx v1.3.4
+	github.com/me-io/go-swap v0.0.0-20181003190758-b8d825d1873d
 	github.com/spf13/viper v1.10.1
 	go.uber.org/zap v1.21.0
 )
 
 require (
+	github.com/bitly/go-simplejson v0.5.0 // indirect
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect

@@ -1,7 +1,10 @@
 package tgbot
 
 import (
+	"fmt"
 	objs "github.com/SakoDroid/telego/objects"
+	exr "github.com/me-io/go-swap/pkg/exchanger"
+	"github.com/me-io/go-swap/pkg/swap"
 	"github.com/morozvol/money_manager/internal/model"
 )
 
@@ -20,41 +23,24 @@ func (bot *tgbot) addOperation(u *objs.Update) {
 	defer close(msgChannel)
 	msgEditor := bot.GetMsgEditor(uc.chatId)
 
-	operation.IdAccount = bot.accountsKeyboard(uc, msgChannel, msgEditor).Id
+	account := bot.accountsKeyboard(uc, msgChannel, msgEditor)
+	operation.IdAccount = account.Id
 	operation.Category = *bot.categoriesKeyboard(uc, msgChannel, msgEditor)
+	currency := bot.choosePaymentCurrency(uc, msgChannel, msgEditor)
 	operation.Sum = bot.getFloat(uc, msgChannel, "Введите сумму")
 
+	ex := swap.NewSwap()
+
+	ex.AddExchanger(exr.NewYahooApi(nil)).Build()
+
+	rate := ex.Latest(fmt.Sprintf("%s/%s", currency.Code, account.Currency.Code)).GetRateValue()
+
+	rate = rate + (rate*3)/100
+
+	operation.Sum = operation.Sum * float32(rate)
 	err = bot.store.Operation().Create(&operation)
 	if err != nil {
 		bot.Logger.Error(err.Error())
 		bot.sendText(chatId, "Ошибка. На счету недостаточно средств")
 	}
 }
-
-/*func (bot *tgbot) operationTypeKeyboard(uc *userChat) int {
-
-	kb := bot.CreateInlineKeyboard()
-	kb.AddCallbackButton("Приход", fmt.Sprintf("id currency: %d", model.Coming), 1)
-	kb.AddCallbackButton("Расход", fmt.Sprintf("id currency: %d", model.Consumption), 1)
-
-	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор типа операции", "", 0, false, false, nil, false, false, kb)
-	if err != nil {
-		bot.error(err, "addOperation: не удалось отправить сообшение", nil)
-	}
-
-	defer func(editor *bt.MessageEditor, messageId int) {
-		_, err := editor.DeleteMessage(messageId)
-		if err != nil {
-			bot.error(err, "currencyKeyboard: не удалось удалить сообщение", msg)
-		}
-	}(bot.GetMsgEditor(uc.chatId), msg.Result.MessageId)
-
-	messageChannel := make(chan string)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer close(messageChannel)
-	defer cancel()
-
-	go bot.RegisterChannel(uc, "callback_query", "id currency", messageChannel, ctx)
-	return
-}
-*/
