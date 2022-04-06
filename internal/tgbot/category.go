@@ -1,13 +1,14 @@
 package tgbot
 
 import (
+	"context"
 	"fmt"
 	bt "github.com/SakoDroid/telego"
 	"github.com/morozvol/money_manager/internal/model"
 	"strconv"
 )
 
-func (bot *tgbot) categoriesKeyboard(uc *userChat) *model.Category {
+func (bot *tgbot) categoriesKeyboard(uc *userChat, messageChannel chan string, editor *bt.MessageEditor) *model.Category {
 	categories := bot.getUserCategories(uc.userId)
 	id := 0
 	lastId := 0
@@ -20,28 +21,32 @@ func (bot *tgbot) categoriesKeyboard(uc *userChat) *model.Category {
 
 	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор категории", "", 0, false, false, nil, false, false, kb)
 	if err != nil {
-		bot.Error(err, "categoriesKeyboard: ообщение не отправлено", nil)
+		bot.error(err, "categoriesKeyboard: ообщение не отправлено", nil)
 	}
-	msgEditor := bot.GetMsgEditor(uc.chatId)
 
-	defer func(msgEditor *bt.MessageEditor, messageId int) {
-		_, err := msgEditor.DeleteMessage(messageId)
+	defer func() {
+		_, err := editor.DeleteMessage(msg.Result.MessageId)
 		if err != nil {
-			bot.Error(err, "categoriesKeyboard: не удалось удалить сообщение", msg)
+			bot.error(err, "categoriesKeyboard: не удалось удалить сообщение", msg)
 		}
-	}(msgEditor, msg.Result.MessageId)
+	}()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go bot.RegisterChannel(uc, "callback_query", "id category", messageChannel, ctx)
 
 	for {
-		if val, err := strconv.ParseInt(<-bot.userData[*uc], 10, 64); err == nil {
+		if val, err := strconv.ParseInt(<-messageChannel, 10, 64); err == nil {
 			lastId = id
 			id = int(val)
 		} else {
-			bot.Error(err, "categoriesKeyboard: Не удалось понять что выбрал пользователь", nil)
+			bot.error(err, "categoriesKeyboard: Не удалось понять что выбрал пользователь", nil)
 		}
 		if id != 0 {
 			category, err := getCategoryById(int64(id), &categories)
 			if err != nil {
-				bot.Error(err, "categoriesKeyboard: Категория не существует", id)
+				bot.error(err, "categoriesKeyboard: Категория не существует", id)
 				return nil
 			}
 
@@ -60,9 +65,9 @@ func (bot *tgbot) categoriesKeyboard(uc *userChat) *model.Category {
 			kb.AddCallbackButton(fmt.Sprintf("%s", "Назад"), fmt.Sprintf("id category: %d", lastId), int((len(cat)-1)/2)+1+1)
 
 		}
-		_, err = msgEditor.EditReplyMarkup(msg.Result.MessageId, "", kb)
+		_, err = editor.EditReplyMarkup(msg.Result.MessageId, "", kb)
 		if err != nil {
-			bot.Error(err, "categoriesKeyboard: Не удалось изменить сообщение", msg)
+			bot.error(err, "categoriesKeyboard: Не удалось изменить сообщение", msg)
 		}
 	}
 }

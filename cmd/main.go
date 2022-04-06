@@ -10,6 +10,6 @@ func main() {
 		println(err)
 		return
 	}
-	bot.Logger.Fatal(bot.HandlersRegister().Error())
+	bot.Logger.Fatal(bot.Start().Error())
 
 }

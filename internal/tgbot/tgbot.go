@@ -1,7 +1,6 @@
 package tgbot
 
 import (
-	"fmt"
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/morozvol/money_manager/internal/config"
@@ -11,7 +10,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
-	"strings"
 )
 
 type userChat struct {
@@ -21,9 +19,8 @@ type userChat struct {
 
 type tgbot struct {
 	bt.Bot
-	Logger   *zap.Logger
-	store    store.Store
-	userData map[userChat]chan string
+	Logger *zap.Logger
+	store  store.Store
 }
 
 func New() (*tgbot, error) {
@@ -74,10 +71,10 @@ func New() (*tgbot, error) {
 
 	s := sqlstore.New(dataBase)
 
-	return &tgbot{*bot, zap.L(), s, make(map[userChat]chan string)}, nil
+	return &tgbot{*bot, zap.L(), s}, nil
 }
 
-func (bot *tgbot) HandlersRegister() error {
+func (bot *tgbot) Start() error {
 	if err := bot.AddHandler("/register", bot.register, "private", "group"); err != nil {
 		return err
 	}
@@ -94,32 +91,11 @@ func (bot *tgbot) HandlersRegister() error {
 		return err
 	}
 
-	messageChannel, err := bot.AdvancedMode().RegisterChannel("", "")
-	if err != nil {
-		bot.Logger.Fatal(err.Error())
-	}
+	messageChannel := bot.GetUpdateChannel()
+
+	defer bot.Stop()
 
 	for {
-		up := <-*messageChannel
-		switch up.GetType() {
-		case "message":
-			{
-				fmt.Println(up.Message.Text)
-				bot.sendData(userChat{up.Message.From.Id, up.Message.Chat.Id}, up.Message.Text)
-			}
-		case "callback_query":
-			uc := userChat{up.CallbackQuery.From.Id, up.CallbackQuery.Message.Chat.Id}
-			ar := strings.Split(up.CallbackQuery.Data, ": ")
-			switch ar[0] {
-			case "id account":
-				bot.sendData(uc, ar[1])
-			case "id currency":
-				bot.sendData(uc, ar[1])
-			case "id category":
-				bot.sendData(uc, ar[1])
-			}
-		default:
-			continue
-		}
+		<-*messageChannel
 	}
 }

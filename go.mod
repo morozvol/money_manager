@@ -3,7 +3,7 @@ module github.com/morozvol/money_manager
 go 1.18
 
 require (
-	github.com/SakoDroid/telego v1.7.1
+	github.com/SakoDroid/telego v1.7.2
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/spf13/viper v1.10.1

@@ -14,13 +14,13 @@ func (bot *tgbot) register(u *objs.Update) {
 		user := &model.User{Id: int64(userData.Id), Name: userData.Username}
 		err = bot.store.User().Create(user)
 		if err != nil {
-			bot.Error(err, "пользователь не может быть зарегистрирован: ", userData)
-			bot.SendText(chatId, "вы уже зарегистрированы!!!")
+			bot.error(err, "пользователь не может быть зарегистрирован: ", userData)
+			bot.sendText(chatId, "вы уже зарегистрированы!!!")
 		}
-		bot.SendText(chatId, "вы успешно зарегистрированы")
+		bot.sendText(chatId, "вы успешно зарегистрированы")
 
 	} else {
-		bot.SendText(chatId, "вы уже зарегистрированы")
+		bot.sendText(chatId, "вы уже зарегистрированы")
 	}
 }
 
@@ -36,5 +36,5 @@ func (bot *tgbot) help(u *objs.Update) {
 		"/add_operation - Новая операция\n" +
 		"/info - информация о доступном баллансе"
 
-	bot.SendText(chatId, helpMessage)
+	bot.sendText(chatId, helpMessage)
 }

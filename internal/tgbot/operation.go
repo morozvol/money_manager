@@ -1,10 +1,8 @@
 package tgbot
 
 import (
-	"fmt"
 	objs "github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/model"
-	"strconv"
 )
 
 func (bot *tgbot) addOperation(u *objs.Update) {
@@ -18,38 +16,45 @@ func (bot *tgbot) addOperation(u *objs.Update) {
 	}
 	uc := &userChat{userId, chatId}
 	operation := model.Operation{}
-	bot.userData[*uc] = make(chan string)
-	account := bot.accountsKeyboard(uc)
+	msgChannel := make(chan string)
+	defer close(msgChannel)
+	msgEditor := bot.GetMsgEditor(uc.chatId)
 
-	operation.IdAccount = account.Id
-	operation.Category = *bot.categoriesKeyboard(uc)
-
-	bot.SendText(chatId, "Введите сумму")
-	if fval, err := strconv.ParseFloat(<-bot.userData[*uc], 64); err == nil {
-		operation.Sum = float32(fval)
-	} else {
-		bot.Error(err, "addOperation: Не удалось привести к float", nil)
-	}
-
-	close(bot.userData[*uc])
-	delete(bot.userData, *uc)
+	operation.IdAccount = bot.accountsKeyboard(uc, msgChannel, msgEditor).Id
+	operation.Category = *bot.categoriesKeyboard(uc, msgChannel, msgEditor)
+	operation.Sum = bot.getFloat(uc, msgChannel, "Введите сумму")
 
 	err = bot.store.Operation().Create(&operation)
 	if err != nil {
 		bot.Logger.Error(err.Error())
-		bot.SendText(chatId, "Ошибка. На счету недостаточно средств")
+		bot.sendText(chatId, "Ошибка. На счету недостаточно средств")
 	}
 }
 
-func (bot *tgbot) operationTypeKeyboard(u *objs.Update) int {
+/*func (bot *tgbot) operationTypeKeyboard(uc *userChat) int {
 
 	kb := bot.CreateInlineKeyboard()
 	kb.AddCallbackButton("Приход", fmt.Sprintf("id currency: %d", model.Coming), 1)
 	kb.AddCallbackButton("Расход", fmt.Sprintf("id currency: %d", model.Consumption), 1)
 
-	msg, err := bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Выбор типа операции", "", 0, false, false, nil, false, false, kb)
+	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор типа операции", "", 0, false, false, nil, false, false, kb)
 	if err != nil {
-		bot.Error(err, "addOperation: не удалось отправить сообшение", nil)
+		bot.error(err, "addOperation: не удалось отправить сообшение", nil)
 	}
-	return msg.Result.MessageId
+
+	defer func(editor *bt.MessageEditor, messageId int) {
+		_, err := editor.DeleteMessage(messageId)
+		if err != nil {
+			bot.error(err, "currencyKeyboard: не удалось удалить сообщение", msg)
+		}
+	}(bot.GetMsgEditor(uc.chatId), msg.Result.MessageId)
+
+	messageChannel := make(chan string)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer close(messageChannel)
+	defer cancel()
+
+	go bot.RegisterChannel(uc, "callback_query", "id currency", messageChannel, ctx)
+	return
 }
+*/
