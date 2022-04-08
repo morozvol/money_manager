@@ -19,7 +19,7 @@ func (r *AccountRepository) Create(a *model.Account) error {
 		a.Currency.Id,
 		a.IdUser,
 		a.AccountType.Id,
-	).Err()
+	).Err() //TODO: записать id в структуру
 }
 
 // Find ...

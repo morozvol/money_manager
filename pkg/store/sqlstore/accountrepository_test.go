@@ -7,26 +7,55 @@ import (
 )
 
 func TestAccountRepository_Create(t *testing.T) {
-	type fields struct {
-		store *Store
+	store, truncate := GetTestDBStore(t)
+	defer truncate("account", "\"user\"")
+	u := model.GetUser()
+
+	r := &UserRepository{
+		store: store,
 	}
-	type args struct {
-		a *model.Account
+	err := r.Create(u)
+	if err != nil {
+		t.Fatal("пользователь не может быть создан")
 	}
+
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		store   *Store
+		a       *model.Account
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"valid",
+			store,
+			model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1}),
+			false,
+		},
+		{
+			"valid duplicate",
+			store,
+			model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1}),
+			false,
+		},
+		{
+			"invalid currency non exist",
+			store,
+			model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 15}),
+			true,
+		},
+		{
+			"invalid type non exist",
+			store,
+			model.GetAccount100(int(u.Id), 15, model.Currency{Id: 1}),
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &AccountRepository{
-				store: tt.fields.store,
+				store: tt.store,
 			}
-			if err := r.Create(tt.args.a); (err != nil) != tt.wantErr {
+			if err := r.Create(tt.a); (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -34,16 +63,11 @@ func TestAccountRepository_Create(t *testing.T) {
 }
 
 func TestAccountRepository_Find(t *testing.T) {
-	type fields struct {
-		store *Store
-	}
-	type args struct {
-		id int
-	}
+
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		store   *Store
+		id      int
 		want    *model.Account
 		wantErr bool
 	}{
@@ -52,9 +76,9 @@ func TestAccountRepository_Find(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &AccountRepository{
-				store: tt.fields.store,
+				store: tt.store,
 			}
-			got, err := r.Find(tt.args.id)
+			got, err := r.Find(tt.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Find() error = %v, wantErr %v", err, tt.wantErr)
 				return

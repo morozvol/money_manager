@@ -17,8 +17,8 @@ func (db *DBConfig) GetConnactionString() string {
 	return fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable", db.User, db.Password, db.Host, db.Port, db.Name)
 }
 
-func GetDataBaseConfig(fileName string) (*DBConfig, error) {
-	viper.AddConfigPath("config")
+func GetDataBaseConfig(fileName string, path string) (*DBConfig, error) {
+	viper.AddConfigPath(path)
 	viper.SetConfigName(fileName)
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err

@@ -23,7 +23,7 @@ func Init() (*Config, error) {
 		return nil, err
 	}
 
-	dateBaseConfig, err := config.GetDataBaseConfig("db")
+	dateBaseConfig, err := config.GetDataBaseConfig("db", "config")
 	if err != nil {
 		return nil, err
 	}

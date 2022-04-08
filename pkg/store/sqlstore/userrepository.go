@@ -27,10 +27,16 @@ func (u user) toModel() model.User {
 // Create ...
 func (r *UserRepository) Create(u *model.User) error {
 
+	var id sql.NullInt64
+	if u.DefaultCurrencyId != 0 {
+		id.Int64 = int64(u.DefaultCurrencyId)
+		id.Valid = true
+	}
 	return r.store.db.QueryRowx(
-		"INSERT INTO \"user\" (id,name) VALUES ($1,$2)",
+		"INSERT INTO \"user\" (id, name, id_default_currency) VALUES ($1,$2,$3)",
 		u.Id,
 		u.Name,
+		id,
 	).Err()
 }
 
