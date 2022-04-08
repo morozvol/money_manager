@@ -13,11 +13,12 @@ type AccountRepository struct {
 // Create ...
 func (r *AccountRepository) Create(a *model.Account) error {
 	return r.store.db.QueryRowx(
-		"INSERT INTO account (name, balance, id_currency, id_user) VALUES ($1,$2,$3,$4)",
+		"INSERT INTO account (name, balance, id_currency, id_user, id_account_type) VALUES ($1,$2,$3,$4,$5)",
 		a.Name,
 		a.Balance,
 		a.Currency.Id,
 		a.IdUser,
+		a.AccountType.Id,
 	).Err()
 }
 
@@ -25,7 +26,7 @@ func (r *AccountRepository) Create(a *model.Account) error {
 func (r *AccountRepository) Find(id int) (*model.Account, error) {
 	a := &model.Account{}
 	if err := r.store.db.QueryRowx(
-		"SELECT id as id_account, balance, id_currency, name as account_name FROM account WHERE id = $1",
+		"SELECT a.id, a.balance, a.id_currency as \"currency.id\", a.name, a.id_account_type as \"account_type.id\", t.symbol as \"account_type.symbol\" FROM account a LEFT JOIN account_type t on a.id_account_type = t.id WHERE a.id = $1",
 		id,
 	).StructScan(a); err != nil {
 		if err == sql.ErrNoRows {
@@ -39,7 +40,7 @@ func (r *AccountRepository) Find(id int) (*model.Account, error) {
 // FindByUserId ...
 func (r *AccountRepository) FindByUserId(userId int) ([]model.Account, error) {
 
-	q := "SELECT id, balance, id_currency as \"currency.id\", name FROM account WHERE id_user = $1"
+	q := "SELECT a.id, a.balance, a.id_currency as \"currency.id\", a.name, a.id_account_type as \"account_type.id\", t.symbol as \"account_type.symbol\" FROM account a LEFT JOIN account_type t on a.id_account_type = t.id WHERE id_user = $1"
 
 	rows, err := r.store.db.Queryx(q, userId)
 	if err != nil {

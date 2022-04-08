@@ -2,11 +2,16 @@ package model
 
 import "time"
 
+type OperationPaymentType uint8
 type OperationType uint8
 
 const (
-	Coming      OperationType = 1
-	Consumption               = 2
+	Coming OperationPaymentType = iota + 1
+	Consumption
+)
+const (
+	Pay OperationType = iota + 1
+	Transfer
 )
 
 type Operation struct {

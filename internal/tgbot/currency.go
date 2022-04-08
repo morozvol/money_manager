@@ -5,83 +5,50 @@ import (
 	"fmt"
 	bt "github.com/SakoDroid/telego"
 	"github.com/morozvol/money_manager/internal/model"
-	"strconv"
 )
 
-func (bot *tgbot) currencyKeyboard(uc *userChat, messageChannel chan string, editor *bt.MessageEditor) *model.Currency {
+func (bot *tgbot) chooseCurrency(u *model.User, uc *UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context, isShowDefault bool) (*model.Currency, error) {
+	shift := 1
 	currencies, err := bot.store.Currency().GetAll()
 	if err != nil {
-		bot.error(err, "currencyKeyboard: не удалось получить валюты из db", nil)
+		bot.error(err, "chooseCurrency: не удалось получить валюты из db", nil)
 	}
 
 	kb := bot.CreateInlineKeyboard()
-	for i, currency := range currencies {
-		kb.AddCallbackButton(currency.Code,
-			fmt.Sprintf("id currency: %d", currency.Id), i+1)
+	if u.DefaultCurrencyId != 0 && isShowDefault {
+		kb.AddCallbackButton("По умолчанию",
+			fmt.Sprintf("id currency: %d", u.DefaultCurrencyId), shift)
+		shift++
 	}
 
-	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор валюты", "", 0, false, false, nil, false, false, kb)
+	for i, currency := range currencies {
+		kb.AddCallbackButton(currency.Code,
+			fmt.Sprintf("id currency: %d", currency.Id), int(i/2)+shift)
+	}
+
+	msg, err := bot.sendInlineKeyboard(uc, "Выбор валюты оплаты", kb)
 	if err != nil {
-		bot.error(err, "currencyKeyboard: не удалось отправить сообщение", nil)
+		bot.error(err, "chooseCurrency: не удалось отправить сообщение", nil)
 	}
 	defer func() {
-		_, err := editor.DeleteMessage(msg.Result.MessageId)
+		_, err := editor.DeleteMessage(msg.MessageId)
 		if err != nil {
-			bot.error(err, "currencyKeyboard: не удалось удалить сообщение", msg)
+			bot.error(err, "chooseCurrency: не удалось удалить сообщение", msg)
 		}
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
 	go bot.RegisterChannel(uc, "callback_query", "id currency", messageChannel, ctx)
 
-	if val, err := strconv.ParseInt(<-messageChannel, 10, 64); err == nil {
+	val, err := getIntFromChannel(messageChannel, ctx)
+	if err == nil {
 		for _, c := range currencies {
-			if c.Id == val {
-				return &c
+			if c.Id == int64(val) {
+				return &c, nil
 			}
 		}
 	}
-	return nil
-}
-
-func (bot *tgbot) choosePaymentCurrency(uc *userChat, messageChannel chan string, editor *bt.MessageEditor) *model.Currency {
-	currencies, err := bot.store.Currency().GetAll()
-	if err != nil {
-		bot.error(err, "choosePaymentCurrency: не удалось получить валюты из db", nil)
-	}
-
-	kb := bot.CreateInlineKeyboard()
-	kb.AddCallbackButton("По умолчанию",
-		fmt.Sprintf("id currency: %d", 3), 1) //TODO: выводить ID выбронного пользователем по умолчанию иначе не добавлять кнопку
-	for i, currency := range currencies {
-		kb.AddCallbackButton(currency.Code,
-			fmt.Sprintf("id currency: %d", currency.Id), int(i/2)+2)
-	}
-
-	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, "Выбор валюты оплаты", "", 0, false, false, nil, false, false, kb)
-	if err != nil {
-		bot.error(err, "currencyKeyboard: не удалось отправить сообщение", nil)
-	}
-	defer func() {
-		_, err := editor.DeleteMessage(msg.Result.MessageId)
-		if err != nil {
-			bot.error(err, "currencyKeyboard: не удалось удалить сообщение", msg)
-		}
-	}()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go bot.RegisterChannel(uc, "callback_query", "id currency", messageChannel, ctx)
-
-	if val, err := strconv.ParseInt(<-messageChannel, 10, 64); err == nil {
-		for _, c := range currencies {
-			if c.Id == val {
-				return &c
-			}
-		}
-	}
-	return nil
+	return nil, err
 }

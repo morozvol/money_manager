@@ -9,12 +9,12 @@ type CategoryRepository struct {
 	store *Store
 }
 type category struct {
-	Id       int64               `db:"id"`
-	Name     string              `db:"name"`
-	Type     model.OperationType `db:"type"`
-	IdOwner  sql.NullInt64       `db:"id_owner"`
-	IdParent sql.NullInt64       `db:"id_parent_category"`
-	IsEnd    bool                `db:"is_end"`
+	Id       int64                      `db:"id"`
+	Name     string                     `db:"name"`
+	Type     model.OperationPaymentType `db:"type"`
+	IdOwner  sql.NullInt64              `db:"id_owner"`
+	IdParent sql.NullInt64              `db:"id_parent_category"`
+	IsEnd    bool                       `db:"is_end"`
 }
 
 func (c category) toModel() model.Category {

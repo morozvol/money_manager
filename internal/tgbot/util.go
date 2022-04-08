@@ -2,11 +2,17 @@ package tgbot
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/SakoDroid/telego"
+	"github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/model"
 	"strconv"
 	"strings"
 )
+
+var ErrOperationCanceled = errors.New("operation was cancel")
+var ErrUnknown = errors.New("error")
 
 func (bot *tgbot) sendText(chatId int, text string) {
 	_, err := bot.SendMessage(chatId, text, "", 0, false, false)
@@ -16,6 +22,12 @@ func (bot *tgbot) sendText(chatId int, text string) {
 }
 
 func (bot *tgbot) error(err error, msg string, data interface{}) {
+	if data == nil {
+		bot.Logger.Error(fmt.Errorf("%w\n\t%s.", err, msg).Error())
+	} else {
+		bot.Logger.Error(fmt.Errorf("%w\n\t%s. (%#v)", err, msg, data).Error())
+
+	}
 	bot.Logger.Error(fmt.Errorf(msg+" %w %#v", err, data).Error())
 }
 
@@ -27,36 +39,31 @@ func getCurrencyById(id int64, currencies []model.Currency) model.Currency {
 	}
 	return model.Currency{}
 }
-func (bot *tgbot) getFloat(uc *userChat, messageChannel chan string, text string) float32 {
+func (bot *tgbot) getFloat(uc *UserChat, messageChannel chan string, text string, parentCtx context.Context) (float32, error) {
 	bot.sendText(uc.chatId, text)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
 	go bot.RegisterChannel(uc, "message", "", messageChannel, ctx)
 
-	s := <-messageChannel
-	s = strings.Replace(s, ",", ".", -1)
-	val, err := strconv.ParseFloat(s, 64)
+	return getFloatFromChannel(messageChannel, ctx)
+}
+func (bot *tgbot) getString(uc *UserChat, messageChannel chan string, text string, parentCtx context.Context) (string, error) {
+	bot.sendText(uc.chatId, text)
+
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
+
+	go bot.RegisterChannel(uc, "message", "", messageChannel, ctx)
+	val, err := getStringFromChannel(messageChannel, ctx)
 	if err != nil {
-		bot.error(err, "getFloat: Не удалось привести к float", nil)
-		return 0
+		return "", err
 	}
-	return float32(val)
-}
-func (bot *tgbot) getString(uc *userChat, messageChannel chan string, text string) string {
-	bot.sendText(uc.chatId, text)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go bot.RegisterChannel(uc, "message", "", messageChannel, ctx)
-
-	return <-messageChannel
-
+	return val, nil
 }
 
-func (bot *tgbot) RegisterChannel(uc *userChat, mediaType string, callbackInfo string, data chan<- string, ctx context.Context) {
+func (bot *tgbot) RegisterChannel(uc *UserChat, mediaType string, callbackInfo string, data chan<- string, ctx context.Context) {
 	messageChannel, err := bot.AdvancedMode().RegisterChannel(strconv.Itoa(uc.chatId), mediaType)
 	if err != nil {
 		bot.Logger.Fatal(err.Error())
@@ -85,5 +92,56 @@ func (bot *tgbot) RegisterChannel(uc *userChat, mediaType string, callbackInfo s
 				return
 			}
 		}
+	}
+}
+
+func (bot *tgbot) cancelOperation(u *objects.Update) {
+	uc := UserChat{u.Message.From.Id, u.Message.Chat.Id}
+	cancel, ok := bot.taskCancel.Load(uc)
+	if ok {
+		cancel()
+	}
+}
+
+func (bot tgbot) sendInlineKeyboard(uc *UserChat, text string, kb telego.MarkUps) (*objects.Message, error) {
+	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, text, "", 0, false, false, nil, false, false, kb)
+	if err != nil {
+		return nil, err
+	}
+	return msg.Result, nil
+
+}
+
+func getIntFromChannel(messageChannel <-chan string, ctx context.Context) (int, error) {
+	select {
+	case msg := <-messageChannel:
+		if val, err := strconv.ParseInt(msg, 10, 64); err == nil {
+			return int(val), nil
+		}
+		return 0, ErrUnknown
+	case <-ctx.Done():
+		return 0, ErrOperationCanceled
+	}
+}
+func getStringFromChannel(messageChannel <-chan string, ctx context.Context) (string, error) {
+	select {
+	case msg := <-messageChannel:
+		return msg, nil
+	case <-ctx.Done():
+		return "", ErrOperationCanceled
+	}
+}
+
+func getFloatFromChannel(messageChannel <-chan string, ctx context.Context) (float32, error) {
+	select {
+	case msg := <-messageChannel:
+		msg = strings.Replace(msg, ",", ".", -1)
+		val, err := strconv.ParseFloat(msg, 32)
+		if err != nil {
+			return 0, err
+		}
+		return float32(val), nil
+	case <-ctx.Done():
+		return 0, ErrOperationCanceled
 	}
 }

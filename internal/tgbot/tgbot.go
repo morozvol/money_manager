@@ -7,20 +7,22 @@ import (
 	"github.com/morozvol/money_manager/internal/store"
 	"github.com/morozvol/money_manager/internal/store/sqlstore"
 	"github.com/morozvol/money_manager/internal/store/sqlstore/db"
+	"github.com/morozvol/money_manager/internal/tgbot/util"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
 )
 
-type userChat struct {
+type UserChat struct {
 	userId int
 	chatId int
 }
 
 type tgbot struct {
 	bt.Bot
-	Logger *zap.Logger
-	store  store.Store
+	Logger     *zap.Logger
+	store      store.Store
+	taskCancel util.CancelFuncMap
 }
 
 func New() (*tgbot, error) {
@@ -71,7 +73,7 @@ func New() (*tgbot, error) {
 
 	s := sqlstore.New(dataBase)
 
-	return &tgbot{*bot, zap.L(), s}, nil
+	return &tgbot{*bot, zap.L(), s, util.NewCancelFuncMap()}, nil
 }
 
 func (bot *tgbot) Start() error {
@@ -88,6 +90,9 @@ func (bot *tgbot) Start() error {
 		return err
 	}
 	if err := bot.AddHandler("/info", bot.getAccountsInfo, "private", "group"); err != nil {
+		return err
+	}
+	if err := bot.AddHandler("/cancel", bot.cancelOperation, "private", "group"); err != nil {
 		return err
 	}
 
