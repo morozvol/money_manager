@@ -4,7 +4,7 @@ import (
 	"fmt"
 	exr "github.com/me-io/go-swap/pkg/exchanger"
 	"github.com/me-io/go-swap/pkg/swap"
-	"github.com/morozvol/money_manager/internal/model"
+	model "github.com/morozvol/money_manager/pkg/model"
 )
 
 func Exchange(currencyFrom *model.Currency, account *model.Account) float32 {

@@ -1,7 +1,7 @@
 package teststore
 
 import (
-	"github.com/morozvol/money_manager/internal/model"
+	"github.com/morozvol/money_manager/pkg/model"
 )
 
 type CategoryRepository struct {
@@ -15,11 +15,22 @@ func (r *CategoryRepository) Create(c *model.Category) error {
 	return nil
 }
 
-func (r *CategoryRepository) GetAll(userId int) ([]model.Category, error) {
+func (r *CategoryRepository) Get(userId int) ([]model.Category, error) {
 	var res []model.Category
 
 	for _, c := range r.categories {
-		if c.IdOwner == userId {
+		if c.IdOwner == userId && c.IsSystem == false {
+			res = append(res, *c)
+		}
+	}
+	return res, nil
+}
+
+func (r *CategoryRepository) GetSystem() ([]model.Category, error) {
+	var res []model.Category
+
+	for _, c := range r.categories {
+		if c.IsSystem == true {
 			res = append(res, *c)
 		}
 	}

@@ -2,7 +2,7 @@ package sqlstore
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/morozvol/money_manager/internal/store"
+	store "github.com/morozvol/money_manager/pkg/store"
 )
 
 // Store ...

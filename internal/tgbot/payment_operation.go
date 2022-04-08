@@ -3,12 +3,12 @@ package tgbot
 import (
 	"context"
 	objs "github.com/SakoDroid/telego/objects"
-	"github.com/morozvol/money_manager/internal/core/exchange"
-	"github.com/morozvol/money_manager/internal/model"
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
+	"github.com/morozvol/money_manager/pkg/core/exchange"
+	"github.com/morozvol/money_manager/pkg/model"
 )
 
-func (bot *tgbot) addOperation(u *objs.Update) {
+func (bot *tgbot) addPaymentOperation(u *objs.Update) {
 
 	uc := &o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
 

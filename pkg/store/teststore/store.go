@@ -1,8 +1,8 @@
 package teststore
 
 import (
-	"github.com/morozvol/money_manager/internal/model"
-	"github.com/morozvol/money_manager/internal/store"
+	model "github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/store"
 )
 
 // Store ...

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	bt "github.com/SakoDroid/telego"
-	"github.com/morozvol/money_manager/internal/model"
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
+	"github.com/morozvol/money_manager/pkg/model"
 )
 
 func (bot *tgbot) categoriesKeyboard(uc *o.UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context) (*model.Category, error) {
@@ -74,7 +74,7 @@ func (bot *tgbot) categoriesKeyboard(uc *o.UserChat, messageChannel chan string,
 }
 
 func (bot *tgbot) getUserCategories(userId int) model.Categories {
-	category, err := bot.store.Category().GetAll(userId)
+	category, err := bot.store.Category().Get(userId)
 	if err != nil {
 		bot.Logger.Error(err.Error())
 	}

@@ -2,7 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
-	"github.com/morozvol/money_manager/internal/model"
+	"github.com/morozvol/money_manager/pkg/model"
 )
 
 type CategoryRepository struct {
@@ -15,6 +15,7 @@ type category struct {
 	IdOwner  sql.NullInt64              `db:"id_owner"`
 	IdParent sql.NullInt64              `db:"id_parent_category"`
 	IsEnd    bool                       `db:"is_end"`
+	IsSystem bool                       `db:"is_system"`
 }
 
 func (c category) toModel() model.Category {
@@ -23,19 +24,37 @@ func (c category) toModel() model.Category {
 
 func (r *CategoryRepository) Create(c *model.Category) error {
 	return r.store.db.QueryRowx(
-		"INSERT INTO category (name, type, id_owner, id_parent_category, is_end) VALUES ($1,$2,$3,$4,$5)",
+		"INSERT INTO category (name, type, id_owner, id_parent_category, is_end, is_system) VALUES ($1,$2,$3,$4,$5,$5)",
 		c.Name,
 		c.Type,
 		c.IdOwner,
 		c.IdParent,
 		c.IsEnd,
+		false,
 	).Err()
 }
 
-func (r *CategoryRepository) GetAll(userId int) ([]model.Category, error) {
+func (r *CategoryRepository) Get(userId int) ([]model.Category, error) {
 	c := category{}
 	res := make([]model.Category, 0)
-	rows, err := r.store.db.Queryx("SELECT id, name, type, id_owner, id_parent_category, is_end FROM category WHERE id_owner IS NULL OR id_owner = $1;", userId)
+	rows, err := r.store.db.Queryx("SELECT id, name, type, id_owner, id_parent_category, is_end FROM category WHERE (id_owner IS NULL OR id_owner = $1) AND is_system = false;", userId)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err := rows.StructScan(&c)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, c.toModel())
+	}
+	return res, nil
+}
+
+func (r *CategoryRepository) GetSystem() ([]model.Category, error) {
+	c := category{}
+	res := make([]model.Category, 0)
+	rows, err := r.store.db.Queryx("SELECT id, name, type, id_owner, id_parent_category, is_end FROM category WHERE is_system = true;")
 	if err != nil {
 		return nil, err
 	}

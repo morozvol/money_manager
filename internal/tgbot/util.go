@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/SakoDroid/telego"
 	"github.com/SakoDroid/telego/objects"
-	"github.com/morozvol/money_manager/internal/model"
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
+	"github.com/morozvol/money_manager/pkg/model"
 	"strconv"
 	"strings"
 )

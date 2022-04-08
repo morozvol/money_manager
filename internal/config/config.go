@@ -1,22 +1,14 @@
 package config
 
 import (
-	"fmt"
+	"github.com/morozvol/money_manager/pkg/store/sqlstore/config"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	DB       DB
+	DB       *config.DBConfig
 	ApiKey   string `mapstructure:"api_key"`
 	LogLevel string `mapstructure:"log_level"`
-}
-
-type DB struct {
-	Name     string `mapstructure:"name"`
-	User     string `mapstructure:"user"`
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	Password string `mapstructure:"password"`
 }
 
 func Init() (*Config, error) {
@@ -31,20 +23,11 @@ func Init() (*Config, error) {
 		return nil, err
 	}
 
-	if err := viper.UnmarshalKey("db", &cfg.DB); err != nil {
+	dateBaseConfig, err := config.GetDataBaseConfig("db")
+	if err != nil {
 		return nil, err
 	}
-
-	if err := cfg.ParseEnv(); err != nil {
-		return nil, err
-	}
+	cfg.DB = dateBaseConfig
 
 	return &cfg, nil
-}
-func (c *Config) ParseEnv() error {
-
-	return nil
-}
-func (db *DB) GetConnactionString() string {
-	return fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable", db.User, db.Password, db.Host, db.Port, db.Name)
 }

@@ -1,8 +1,8 @@
 package teststore
 
 import (
-	"github.com/morozvol/money_manager/internal/model"
-	"github.com/morozvol/money_manager/internal/store"
+	"github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/store"
 )
 
 type OperationRepository struct {
@@ -11,11 +11,11 @@ type OperationRepository struct {
 }
 
 // Create ...
-func (r *OperationRepository) Create(o *model.Operation) error {
-
-	o.Id = int64(len(r.operations) + 1)
-	r.operations[int(o.Id)] = o
-
+func (r *OperationRepository) Create(o ...*model.Operation) error {
+	for _, oper := range o {
+		oper.Id = int64(len(r.operations) + 1)
+		r.operations[int(oper.Id)] = oper
+	}
 	return nil
 }
 
