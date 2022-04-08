@@ -5,9 +5,10 @@ import (
 	"fmt"
 	bt "github.com/SakoDroid/telego"
 	"github.com/morozvol/money_manager/internal/model"
+	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 )
 
-func (bot *tgbot) chooseCurrency(u *model.User, uc *UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context, isShowDefault bool) (*model.Currency, error) {
+func (bot *tgbot) chooseCurrency(u *model.User, uc *o.UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context, isShowDefault bool) (*model.Currency, error) {
 	shift := 1
 	currencies, err := bot.store.Currency().GetAll()
 	if err != nil {

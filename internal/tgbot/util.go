@@ -7,6 +7,7 @@ import (
 	"github.com/SakoDroid/telego"
 	"github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/model"
+	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 	"strconv"
 	"strings"
 )
@@ -39,8 +40,8 @@ func getCurrencyById(id int64, currencies []model.Currency) model.Currency {
 	}
 	return model.Currency{}
 }
-func (bot *tgbot) getFloat(uc *UserChat, messageChannel chan string, text string, parentCtx context.Context) (float32, error) {
-	bot.sendText(uc.chatId, text)
+func (bot *tgbot) getFloat(uc *o.UserChat, messageChannel chan string, text string, parentCtx context.Context) (float32, error) {
+	bot.sendText(uc.ChatId, text)
 
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
@@ -49,8 +50,8 @@ func (bot *tgbot) getFloat(uc *UserChat, messageChannel chan string, text string
 
 	return getFloatFromChannel(messageChannel, ctx)
 }
-func (bot *tgbot) getString(uc *UserChat, messageChannel chan string, text string, parentCtx context.Context) (string, error) {
-	bot.sendText(uc.chatId, text)
+func (bot *tgbot) getString(uc *o.UserChat, messageChannel chan string, text string, parentCtx context.Context) (string, error) {
+	bot.sendText(uc.ChatId, text)
 
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
@@ -63,8 +64,8 @@ func (bot *tgbot) getString(uc *UserChat, messageChannel chan string, text strin
 	return val, nil
 }
 
-func (bot *tgbot) RegisterChannel(uc *UserChat, mediaType string, callbackInfo string, data chan<- string, ctx context.Context) {
-	messageChannel, err := bot.AdvancedMode().RegisterChannel(strconv.Itoa(uc.chatId), mediaType)
+func (bot *tgbot) RegisterChannel(uc *o.UserChat, mediaType string, callbackInfo string, data chan<- string, ctx context.Context) {
+	messageChannel, err := bot.AdvancedMode().RegisterChannel(strconv.Itoa(uc.ChatId), mediaType)
 	if err != nil {
 		bot.Logger.Fatal(err.Error())
 	}
@@ -76,19 +77,19 @@ func (bot *tgbot) RegisterChannel(uc *UserChat, mediaType string, callbackInfo s
 			{
 				switch up.GetType() {
 				case "message":
-					if up.Message.From.Id == uc.userId {
+					if up.Message.From.Id == uc.UserId {
 						data <- up.Message.Text
 					}
 				case "callback_query":
 					ar = strings.Split(up.CallbackQuery.Data, ": ")
-					if up.CallbackQuery.From.Id == uc.userId && ar[0] == callbackInfo {
+					if up.CallbackQuery.From.Id == uc.UserId && ar[0] == callbackInfo {
 						data <- ar[1]
 					}
 				}
 			}
 		case <-ctx.Done():
 			{
-				bot.AdvancedMode().UnRegisterChannel(strconv.Itoa(uc.chatId), mediaType)
+				bot.AdvancedMode().UnRegisterChannel(strconv.Itoa(uc.ChatId), mediaType)
 				return
 			}
 		}
@@ -96,15 +97,15 @@ func (bot *tgbot) RegisterChannel(uc *UserChat, mediaType string, callbackInfo s
 }
 
 func (bot *tgbot) cancelOperation(u *objects.Update) {
-	uc := UserChat{u.Message.From.Id, u.Message.Chat.Id}
+	uc := o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
 	cancel, ok := bot.taskCancel.Load(uc)
 	if ok {
 		cancel()
 	}
 }
 
-func (bot tgbot) sendInlineKeyboard(uc *UserChat, text string, kb telego.MarkUps) (*objects.Message, error) {
-	msg, err := bot.AdvancedMode().ASendMessage(uc.chatId, text, "", 0, false, false, nil, false, false, kb)
+func (bot tgbot) sendInlineKeyboard(uc *o.UserChat, text string, kb telego.MarkUps) (*objects.Message, error) {
+	msg, err := bot.AdvancedMode().ASendMessage(uc.ChatId, text, "", 0, false, false, nil, false, false, kb)
 	if err != nil {
 		return nil, err
 	}

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	bt "github.com/SakoDroid/telego"
 	"github.com/morozvol/money_manager/internal/model"
+	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 )
 
-func (bot *tgbot) categoriesKeyboard(uc *UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context) (*model.Category, error) {
-	categories := bot.getUserCategories(uc.userId)
+func (bot *tgbot) categoriesKeyboard(uc *o.UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context) (*model.Category, error) {
+	categories := bot.getUserCategories(uc.UserId)
 	id := 0
 	lastId := 0
 

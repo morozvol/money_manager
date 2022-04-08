@@ -8,16 +8,17 @@ import (
 	bt "github.com/SakoDroid/telego"
 	"github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/model"
+	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 	"html"
 )
 
 func (bot *tgbot) addAccount(u *objects.Update) {
-	uc := &UserChat{u.Message.From.Id, u.Message.Chat.Id}
+	uc := &o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	bot.taskCancel.Store(*uc, cancel)
 
-	user, err := bot.store.User().Find(uc.userId)
+	user, err := bot.store.User().Find(uc.UserId)
 	if err != nil {
 		bot.help(u)
 		return
@@ -25,7 +26,7 @@ func (bot *tgbot) addAccount(u *objects.Update) {
 	account := model.Account{}
 	msgChannel := make(chan string)
 	defer close(msgChannel)
-	msgEditor := bot.GetMsgEditor(uc.chatId)
+	msgEditor := bot.GetMsgEditor(uc.ChatId)
 
 	name, err := bot.getString(uc, msgChannel, "Введите название кошелька", ctx)
 	if err != nil {
@@ -45,7 +46,7 @@ func (bot *tgbot) addAccount(u *objects.Update) {
 	}
 	account.Balance = bal
 
-	account.IdUser = uc.userId
+	account.IdUser = uc.UserId
 
 	err = bot.store.Account().Create(&account)
 	if err != nil {
@@ -53,12 +54,12 @@ func (bot *tgbot) addAccount(u *objects.Update) {
 	}
 }
 
-func (bot *tgbot) accountsKeyboard(uc *UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context) (*model.Account, error) {
-	accounts := bot.getUserAccounts(uc.userId)
+func (bot *tgbot) accountsKeyboard(uc *o.UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context) (*model.Account, error) {
+	accounts := bot.getUserAccounts(uc.UserId)
 	if len(accounts) == 0 {
 		bot.youNeedCreateAccount(uc)
 		bot.Logger.Info("accountsKeyboard: Отправлено сообщение пользователю о необходимости создать счёт")
-		return nil, errors.New("Отправлено сообщение пользователю о необходимости создать счёт")
+		return nil, errors.New("oтправлено сообщение пользователю о необходимости создать счёт")
 	}
 	kb := bot.CreateInlineKeyboard()
 	for i, account := range accounts {
@@ -121,6 +122,6 @@ func (bot *tgbot) getAccountsInfo(u *objects.Update) {
 	bot.sendText(u.Message.Chat.Id, buffer.String())
 }
 
-func (bot *tgbot) youNeedCreateAccount(uc *UserChat) {
-	bot.sendText(uc.chatId, "Вам необходимо создать счёт перед добавлением операции. Это можно сделать при помощи /add_account")
+func (bot *tgbot) youNeedCreateAccount(uc *o.UserChat) {
+	bot.sendText(uc.ChatId, "Вам необходимо создать счёт перед добавлением операции. Это можно сделать при помощи /add_account")
 }

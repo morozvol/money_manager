@@ -5,17 +5,18 @@ import (
 	objs "github.com/SakoDroid/telego/objects"
 	"github.com/morozvol/money_manager/internal/core/exchange"
 	"github.com/morozvol/money_manager/internal/model"
+	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 )
 
 func (bot *tgbot) addOperation(u *objs.Update) {
 
-	uc := &UserChat{u.Message.From.Id, u.Message.Chat.Id}
+	uc := &o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	bot.taskCancel.Store(*uc, cancel)
 
-	user, err := bot.store.User().Find(uc.userId)
+	user, err := bot.store.User().Find(uc.UserId)
 	if err != nil {
 		bot.help(u)
 		return
@@ -23,7 +24,7 @@ func (bot *tgbot) addOperation(u *objs.Update) {
 	operation := model.Operation{}
 	msgChannel := make(chan string)
 	defer close(msgChannel)
-	msgEditor := bot.GetMsgEditor(uc.chatId)
+	msgEditor := bot.GetMsgEditor(uc.ChatId)
 
 	account, err := bot.accountsKeyboard(uc, msgChannel, msgEditor, ctx)
 	if err != nil {
@@ -51,6 +52,6 @@ func (bot *tgbot) addOperation(u *objs.Update) {
 	err = bot.store.Operation().Create(&operation)
 	if err != nil {
 		bot.Logger.Error(err.Error())
-		bot.sendText(uc.chatId, "Ошибка. На счету недостаточно средств")
+		bot.sendText(uc.ChatId, "Ошибка. На счету недостаточно средств")
 	}
 }
