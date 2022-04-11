@@ -13,7 +13,7 @@ type OperationRepository struct {
 // Create ...
 func (r *OperationRepository) Create(o ...*model.Operation) error {
 	for _, oper := range o {
-		oper.Id = int64(len(r.operations) + 1)
+		oper.Id = int(len(r.operations) + 1)
 		r.operations[int(oper.Id)] = oper
 	}
 	return nil

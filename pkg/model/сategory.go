@@ -3,7 +3,7 @@ package model
 import "fmt"
 
 type Category struct {
-	Id       int64                `db:"id"`
+	Id       int                  `db:"id"`
 	Name     string               `db:"name"`
 	Type     OperationPaymentType `db:"type"`
 	IdOwner  int                  `db:"id_owner"`
@@ -25,7 +25,7 @@ func (cs Categories) GetCategoriesByIdParent(id int) Categories {
 	return res
 }
 
-func (cs Categories) GetCategoryById(id int64) (*Category, error) {
+func (cs Categories) GetCategoryById(id int) (*Category, error) {
 
 	for _, c := range cs {
 		if c.Id == id {

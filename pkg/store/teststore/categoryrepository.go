@@ -10,7 +10,7 @@ type CategoryRepository struct {
 }
 
 func (r *CategoryRepository) Create(c *model.Category) error {
-	c.Id = int64(len(r.categories) + 1)
+	c.Id = int(len(r.categories) + 1)
 	r.categories[int(c.Id)] = c
 	return nil
 }

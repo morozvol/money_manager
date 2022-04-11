@@ -45,7 +45,7 @@ func (bot *tgbot) categoriesKeyboard(uc *o.UserChat, messageChannel chan string,
 		id = val
 
 		if id != 0 {
-			category, err := categories.GetCategoryById(int64(id))
+			category, err := categories.GetCategoryById(id)
 			if err != nil {
 				bot.error(err, "categoriesKeyboard: Категория не существует", id)
 				return nil, ErrUnknown

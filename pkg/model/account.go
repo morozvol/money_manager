@@ -1,7 +1,7 @@
 package model
 
 type Account struct {
-	Id          int64    `db:"id"`
+	Id          int      `db:"id"`
 	Balance     float32  `db:"balance"`
 	Currency    Currency `db:"currency"`
 	Name        string   `db:"name"`

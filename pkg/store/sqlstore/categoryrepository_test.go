@@ -157,7 +157,7 @@ func TestCategoryRepository_GetSystem(t *testing.T) {
 
 func Test_category_toModel(t *testing.T) {
 	type fields struct {
-		Id       int64
+		Id       int
 		Name     string
 		Type     model.OperationPaymentType
 		IdOwner  sql.NullInt64

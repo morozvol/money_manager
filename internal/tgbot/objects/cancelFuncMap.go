@@ -23,6 +23,17 @@ func (c *CancelFuncMap) Store(key UserChat, value context.CancelFunc) {
 	c.m[key] = value
 }
 
+func (c *CancelFuncMap) Cancel(key UserChat) bool {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+	cancel, ok := c.m[key]
+	if ok {
+		cancel()
+		delete(c.m, key)
+	}
+	return ok
+}
+
 func NewCancelFuncMap() CancelFuncMap {
 	return CancelFuncMap{mx: new(sync.RWMutex), m: make(map[UserChat]context.CancelFunc)}
 }

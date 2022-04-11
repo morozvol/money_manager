@@ -49,9 +49,7 @@ func New(store store.Store, conf *config.Config) (*tgbot, error) {
 }
 
 func (bot *tgbot) Start() error {
-	if err := bot.AddHandler("/register", bot.register, "private", "group"); err != nil {
-		return err
-	}
+
 	if err := bot.AddHandler("/help", bot.help, "private", "group"); err != nil {
 		return err
 	}

@@ -8,8 +8,8 @@ import (
 var lock = new(sync.RWMutex)
 
 type systemCategory struct {
-	IdComingTransfer      int64
-	IdConsumptionTransfer int64
+	IdComingTransfer      int
+	IdConsumptionTransfer int
 }
 
 var singleInstance *systemCategory

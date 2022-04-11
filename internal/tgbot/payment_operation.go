@@ -10,6 +10,7 @@ import (
 )
 
 func (bot *tgbot) addPaymentOperation(u *objs.Update) {
+	bot.beforeExecution(u)
 
 	uc := &o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
 
@@ -61,5 +62,19 @@ func (bot *tgbot) addPaymentOperation(u *objs.Update) {
 	if err != nil {
 		bot.Logger.Error(err.Error())
 		bot.sendText(uc.ChatId, "Ошибка. На счету недостаточно средств")
+		return
 	}
+	bot.successOperation(uc, &operation)
+}
+
+func (bot *tgbot) successOperation(uc *o.UserChat, operation *model.Operation) {
+	tf := bot.GetTextFormatter()
+	tf.AddBold("Операция успешно выполнена.\n")
+	if operation.Category.Type == model.Coming {
+		tf.AddNormal(fmt.Sprintf("Пополнено %.2f", operation.Sum))
+	} else {
+		tf.AddNormal(fmt.Sprintf("Cписано %.2f", operation.Sum))
+	}
+
+	bot.sendText(uc.ChatId, tf.GetText())
 }

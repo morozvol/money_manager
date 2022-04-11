@@ -8,8 +8,10 @@ import (
 	"github.com/SakoDroid/telego/objects"
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 	"github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/store"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var ErrOperationCanceled = errors.New("operation was cancel")
@@ -22,17 +24,30 @@ func (bot *tgbot) sendText(chatId int, text string) {
 	}
 }
 
+func (bot *tgbot) sendTemporaryText(chatId int, text string, dur time.Duration) {
+	msg, err := bot.SendMessage(chatId, text, "", 0, false, false)
+	if err != nil {
+		bot.error(err, "sendText: Не удалось отправить сообщение", nil)
+		return
+	}
+	time.Sleep(dur)
+	editor := bot.GetMsgEditor(chatId)
+	_, err = editor.DeleteMessage(msg.Result.MessageId)
+	if err != nil {
+		return
+	}
+}
+
 func (bot *tgbot) error(err error, msg string, data interface{}) {
 	if data == nil {
 		bot.Logger.Error(fmt.Errorf("%w\n\t%s.", err, msg).Error())
 	} else {
 		bot.Logger.Error(fmt.Errorf("%w\n\t%s. (%#v)", err, msg, data).Error())
-
 	}
 	bot.Logger.Error(fmt.Errorf(msg+" %w %#v", err, data).Error())
 }
 
-func getCurrencyById(id int64, currencies []model.Currency) model.Currency {
+func getCurrencyById(id int, currencies []model.Currency) model.Currency {
 	for _, item := range currencies {
 		if item.Id == id {
 			return item
@@ -103,6 +118,20 @@ func (bot *tgbot) cancelOperation(u *objects.Update) {
 		cancel()
 	}
 }
+func (bot *tgbot) TryCancelOperation(uc *o.UserChat) bool {
+	_, ok := bot.taskCancel.Load(*uc)
+	if ok {
+		bot.sendTemporaryText(uc.ChatId, "В данный момент происходит другая операция. Для её отмены нажмите /cancel", time.Second*5)
+		time.Sleep(5 * time.Second)
+
+		_, ok := bot.taskCancel.Load(*uc)
+		if ok {
+			return false
+		}
+		return true
+	}
+	return true
+}
 
 func (bot tgbot) sendInlineKeyboard(uc *o.UserChat, text string, kb telego.MarkUps) (*objects.Message, error) {
 	msg, err := bot.AdvancedMode().ASendMessage(uc.ChatId, text, "", 0, false, false, nil, false, false, kb)
@@ -111,6 +140,14 @@ func (bot tgbot) sendInlineKeyboard(uc *o.UserChat, text string, kb telego.MarkU
 	}
 	return msg.Result, nil
 
+}
+
+func (bot tgbot) beforeExecution(u *objects.Update) {
+	_, err := bot.store.User().Find(u.Message.From.Id)
+	if err == store.ErrRecordNotFound {
+		bot.register(u)
+		bot.TryCancelOperation(&o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id})
+	}
 }
 
 func getIntFromChannel(messageChannel <-chan string, ctx context.Context) (int, error) {

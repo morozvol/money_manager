@@ -6,10 +6,11 @@ import (
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 	"github.com/morozvol/money_manager/pkg/core/exchange"
 	"github.com/morozvol/money_manager/pkg/core/system_category"
-	model "github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/model"
 )
 
 func (bot *tgbot) addTransferOperation(u *objs.Update) {
+	bot.beforeExecution(u)
 
 	uc := &o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
 
@@ -41,18 +42,18 @@ func (bot *tgbot) addTransferOperation(u *objs.Update) {
 	if err != nil {
 		return
 	}
-	rate, err := exchange.Exchange(&accountTo.Currency, accountFrom)
+	rate, err := exchange.Exchange(&accountFrom.Currency, accountTo)
 	if err != nil {
 		bot.sendText(uc.ChatId, "Ошибка. Не удалось получить курс "+accountTo.Currency.Code+"/"+accountFrom.Currency.Code+".")
 		bot.error(err, "addTransferOperation", nil)
 		return
 	}
-	sum = sum * rate
+	sumComing := sum * rate
 
 	sc := system_category.GetCategory(bot.store)
 
 	operationComing := model.Operation{Sum: sum, IdAccount: accountFrom.Id, Category: model.Category{Id: sc.IdConsumptionTransfer}}
-	operationConsumption := model.Operation{Sum: sum, IdAccount: accountTo.Id, Category: model.Category{Id: sc.IdComingTransfer}}
+	operationConsumption := model.Operation{Sum: sumComing, IdAccount: accountTo.Id, Category: model.Category{Id: sc.IdComingTransfer}}
 
 	err = bot.store.Operation().Create(&operationComing, &operationConsumption)
 	if err != nil {

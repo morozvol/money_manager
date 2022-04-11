@@ -24,7 +24,7 @@ func (r *AccountRepository) Create(a *model.Account) error {
 	if err != nil {
 		return err
 	}
-	a.Id = int64(lastInsertId)
+	a.Id = int(lastInsertId)
 	return nil
 }
 

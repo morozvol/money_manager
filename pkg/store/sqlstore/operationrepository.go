@@ -20,7 +20,7 @@ func (r *OperationRepository) Create(o ...*model.Operation) error {
 	if err != nil {
 		return err
 	}
-	var lastId int64
+	var lastId int
 	for _, operation := range o {
 		operation.Time = time.Now()
 		err = tx.QueryRow("SELECT public.apply_operation($1, $2, $3, $4, $5)",
@@ -30,9 +30,9 @@ func (r *OperationRepository) Create(o ...*model.Operation) error {
 			operation.Description,
 			operation.Time).Scan(&lastId)
 		if err != nil {
-			err_rb := tx.Rollback()
-			if err_rb != nil {
-				return err_rb
+			errRb := tx.Rollback()
+			if errRb != nil {
+				return errRb
 			}
 			return err
 		}

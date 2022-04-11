@@ -11,7 +11,7 @@ type UserRepository struct {
 	store *Store
 }
 type user struct {
-	Id                int64         `db:"id"`
+	Id                int           `db:"id"`
 	Name              string        `db:"name"`
 	DefaultCurrencyId sql.NullInt64 `db:"id_default_currency"`
 }

@@ -1,6 +1,6 @@
 package model
 
-type AccountTypes int64
+type AccountTypes int
 
 const (
 	Card AccountTypes = iota + 1

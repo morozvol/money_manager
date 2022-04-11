@@ -9,7 +9,7 @@ type CategoryRepository struct {
 	store *Store
 }
 type category struct {
-	Id       int64                      `db:"id"`
+	Id       int                        `db:"id"`
 	Name     string                     `db:"name"`
 	Type     model.OperationPaymentType `db:"type"`
 	IdOwner  sql.NullInt64              `db:"id_owner"`
@@ -38,7 +38,7 @@ func (r *CategoryRepository) Create(c *model.Category) error {
 	if err != nil {
 		return err
 	}
-	c.Id = int64(lastInsertId)
+	c.Id = int(lastInsertId)
 	return nil
 }
 
