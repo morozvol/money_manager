@@ -1,45 +1,51 @@
 -- PROCEDURE: public.apply_operation(integer, double precision, integer)
 
-DROP PROCEDURE IF EXISTS public.apply_operation(integer, double precision, integer);
+DROP FUNCTION IF EXISTS public.apply_operation(integer, double precision, integer, text, timestamp);
 
-CREATE OR REPLACE PROCEDURE public.apply_operation(
-    IN id_account integer,
-    IN sum double precision,
-    IN id_category integer)
+CREATE OR REPLACE FUNCTION public.apply_operation(
+    p_id_account integer,
+    p_sum double precision,
+    p_id_category integer,
+    p_description text,
+    p_time timestamp)
+    RETURNS int
     LANGUAGE 'plpgsql'
-AS $BODY$
+AS
+$BODY$
 declare
-    bal float := 0;
+    bal           float := 0;
     category_type int;
+    p_id          int;
 begin
 
     SELECT type
     into category_type
     from category
-    where id = id_category;
+    where id = p_id_category;
 
-    SELECT
-        CAST(balance + iif(category_type = 1,sum,sum * -1) as float)
+    SELECT CAST(balance + iif(category_type = 1, p_sum, p_sum * -1) as float)
     into bal
     from account
-    where id = id_account;
+    where id = p_id_account;
 
     IF bal < 0 THEN
         RAISE 'На счету недостаточно средств для проведения операции' USING ERRCODE = '23505';
     ELSE
 
-        INSERT INTO operation(time, sum, id_category, id_account) VALUES
-            (NOW(), sum, id_category, id_account);
+        INSERT INTO operation(time, sum, id_category, id_account, description)
+        VALUES (p_time, p_sum, p_id_category, p_id_account, p_description)
+        RETURNING id INTO p_id;
 
         UPDATE account
-        set  balance = balance + iif(category_type =1,sum,-sum)
-        where id = id_account /*RETURNING id INTO id_operation*/;
-        commit;
+        SET balance = balance + iif(category_type = 1, p_sum, -p_sum)
+        WHERE id = p_id_account;
+
+        RETURN p_id;
 
     END IF;
 
 end;
 $BODY$;
 
-ALTER PROCEDURE public.apply_operation(integer, double precision, integer)
+ALTER FUNCTION public.apply_operation(integer, double precision, integer, text, timestamp)
     OWNER TO postgres;
