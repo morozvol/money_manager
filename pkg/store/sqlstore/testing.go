@@ -14,22 +14,26 @@ import (
 )
 
 // TestDB ...
+var dsn string = ""
+
 func TestDB(t *testing.T, config *config.DBConfig) (*sqlx.DB, func(...string)) {
 	t.Helper()
-	if config.Name != "test" {
-		t.Fatal("DataBase name != \"test\"")
-		return nil, nil
-	}
-	// parse connection string
-	dbConf, err := pgx.ParseConfig(config.GetConnactionString())
-	if err != nil {
-		t.Fatal()
-	}
+	if dsn == "" {
+		if config.Name != "test" {
+			t.Fatal("DataBase name != \"test\"")
+		}
+		// parse connection string
+		dbConf, err := pgx.ParseConfig(config.GetConnactionString())
+		if err != nil {
+			t.Fatal()
+		}
 
-	// register pgx conn
-	dsn := stdlib.RegisterConnConfig(dbConf)
+		// register pgx conn
+		dsn = stdlib.RegisterConnConfig(dbConf)
 
-	sql.Register("wrapper", stdlib.GetDefaultDriver())
+		sql.Register("wrapper", stdlib.GetDefaultDriver())
+
+	}
 	wdb, err := sql.Open("wrapper", dsn)
 	if err != nil {
 		t.Fatal()
@@ -49,7 +53,7 @@ func TestDB(t *testing.T, config *config.DBConfig) (*sqlx.DB, func(...string)) {
 		if len(tables) > 0 {
 			_, err := db.Exec(fmt.Sprintf("TRUNCATE %s RESTART IDENTITY CASCADE", strings.Join(tables, ", ")))
 			if err != nil {
-				return
+				t.Errorf("Truncate failed: %s", err.Error())
 			}
 		}
 

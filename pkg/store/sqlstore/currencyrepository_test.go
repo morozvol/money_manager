@@ -7,27 +7,36 @@ import (
 )
 
 func TestCurrencyRepository_Find(t *testing.T) {
-	type fields struct {
-		store *Store
-	}
-	type args struct {
-		id int
-	}
+	store, truncate := GetTestDBStore(t)
+	defer truncate()
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		store   *Store
+		id      int
 		want    *model.Currency
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"find USD",
+			store,
+			1,
+			&model.Currency{Id: 1, Code: "USD", Name: "Долар США"},
+			false,
+		},
+		{
+			"find non exist",
+			store,
+			100,
+			nil,
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CurrencyRepository{
-				store: tt.fields.store,
+				store: tt.store,
 			}
-			got, err := r.Find(tt.args.id)
+			got, err := r.Find(tt.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Find() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -40,30 +49,30 @@ func TestCurrencyRepository_Find(t *testing.T) {
 }
 
 func TestCurrencyRepository_GetAll(t *testing.T) {
-	type fields struct {
-		store *Store
-	}
+	store, truncate := GetTestDBStore(t)
+	defer truncate()
 	tests := []struct {
 		name    string
-		fields  fields
-		want    []model.Currency
+		store   *Store
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"get all",
+			store,
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CurrencyRepository{
-				store: tt.fields.store,
+				store: tt.store,
 			}
-			got, err := r.GetAll()
+			_, err := r.GetAll()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetAll() got = %v, want %v", got, tt.want)
-			}
+
 		})
 	}
 }

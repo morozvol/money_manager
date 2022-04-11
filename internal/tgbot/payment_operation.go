@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"context"
+	"fmt"
 	objs "github.com/SakoDroid/telego/objects"
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 	"github.com/morozvol/money_manager/pkg/core/exchange"
@@ -47,7 +48,14 @@ func (bot *tgbot) addPaymentOperation(u *objs.Update) {
 	if err != nil {
 		return
 	}
-	operation.Sum = sum * exchange.Exchange(currency, account)
+	rate, err := exchange.Exchange(currency, account)
+	if err != nil {
+		bot.sendText(uc.ChatId, "Ошибка. Не удалось получить курс "+currency.Code+"/"+account.Currency.Code+".")
+		bot.error(err, "addPaymentOperation", nil)
+		return
+	}
+	bot.Logger.Debug(fmt.Sprintf("курс: %f", rate))
+	operation.Sum = sum * rate
 
 	err = bot.store.Operation().Create(&operation)
 	if err != nil {

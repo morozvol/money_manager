@@ -41,7 +41,13 @@ func (bot *tgbot) addTransferOperation(u *objs.Update) {
 	if err != nil {
 		return
 	}
-	sum = sum * exchange.Exchange(&accountTo.Currency, accountFrom)
+	rate, err := exchange.Exchange(&accountTo.Currency, accountFrom)
+	if err != nil {
+		bot.sendText(uc.ChatId, "Ошибка. Не удалось получить курс "+accountTo.Currency.Code+"/"+accountFrom.Currency.Code+".")
+		bot.error(err, "addTransferOperation", nil)
+		return
+	}
+	sum = sum * rate
 
 	sc := system_category.GetCategory(bot.store)
 

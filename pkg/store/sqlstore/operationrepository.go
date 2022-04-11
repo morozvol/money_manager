@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/morozvol/money_manager/pkg/model"
 	"github.com/morozvol/money_manager/pkg/store"
+	"time"
 )
 
 type OperationRepository struct {
@@ -19,13 +20,15 @@ func (r *OperationRepository) Create(o ...*model.Operation) error {
 	if err != nil {
 		return err
 	}
-
+	var lastId int64
 	for _, operation := range o {
-		_, err = tx.ExecContext(ctx, "CALL public.apply_operation($1, $2, $3, $4)",
+		operation.Time = time.Now()
+		err = tx.QueryRow("SELECT public.apply_operation($1, $2, $3, $4, $5)",
 			operation.IdAccount,
 			operation.Sum,
 			operation.Category.Id,
-			operation.Description)
+			operation.Description,
+			operation.Time).Scan(&lastId)
 		if err != nil {
 			err_rb := tx.Rollback()
 			if err_rb != nil {
@@ -33,6 +36,7 @@ func (r *OperationRepository) Create(o ...*model.Operation) error {
 			}
 			return err
 		}
+		operation.Id = lastId
 	}
 
 	err = tx.Commit()
@@ -47,7 +51,7 @@ func (r *OperationRepository) Create(o ...*model.Operation) error {
 func (r *OperationRepository) Find(id int) (*model.Operation, error) {
 	u := &model.Operation{}
 	if err := r.store.db.QueryRowx(
-		"SELECT id, time, sum FROM operation WHERE id = $1",
+		"SELECT id, id_account, time, sum FROM operation WHERE id = $1",
 		id,
 	).StructScan(u); err != nil {
 		if err == sql.ErrNoRows {

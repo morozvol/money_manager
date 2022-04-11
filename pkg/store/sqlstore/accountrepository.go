@@ -12,14 +12,20 @@ type AccountRepository struct {
 
 // Create ...
 func (r *AccountRepository) Create(a *model.Account) error {
-	return r.store.db.QueryRowx(
-		"INSERT INTO account (name, balance, id_currency, id_user, id_account_type) VALUES ($1,$2,$3,$4,$5)",
+	lastInsertId := 0
+	err := r.store.db.QueryRow(
+		"INSERT INTO account (name, balance, id_currency, id_user, id_account_type) VALUES ($1,$2,$3,$4,$5) RETURNING id;",
 		a.Name,
 		a.Balance,
 		a.Currency.Id,
 		a.IdUser,
 		a.AccountType.Id,
-	).Err() //TODO: записать id в структуру
+	).Scan(&lastInsertId)
+	if err != nil {
+		return err
+	}
+	a.Id = int64(lastInsertId)
+	return nil
 }
 
 // Find ...
@@ -57,6 +63,9 @@ func (r *AccountRepository) FindByUserId(userId int) ([]model.Account, error) {
 			return nil, err
 		}
 		accounts = append(accounts, account)
+	}
+	if len(accounts) == 0 {
+		return nil, store.ErrRecordNotFound
 	}
 
 	return accounts, nil

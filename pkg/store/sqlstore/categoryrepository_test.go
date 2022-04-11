@@ -8,26 +8,45 @@ import (
 )
 
 func TestCategoryRepository_Create(t *testing.T) {
-	type fields struct {
-		store *Store
-	}
-	type args struct {
-		c *model.Category
-	}
+	store, truncate := GetTestDBStore(t)
+	defer truncate("category")
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		store   *Store
+		c       *model.Category
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"valid",
+			store,
+			model.GetCategory(model.Consumption, 0, 0, true, false),
+			false,
+		},
+		{
+			"invalid user non exist",
+			store,
+			model.GetCategory(model.Consumption, 10, 0, true, false),
+			true,
+		},
+		{
+			"invalid parent category non exist",
+			store,
+			model.GetCategory(model.Consumption, 0, 15, true, false),
+			true,
+		},
+		{
+			"invalid user non exist",
+			store,
+			model.GetCategory(model.Consumption, 0, 15, true, false),
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				store: tt.fields.store,
+				store: tt.store,
 			}
-			if err := r.Create(tt.args.c); (err != nil) != tt.wantErr {
+			if err := r.Create(tt.c); (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -35,27 +54,67 @@ func TestCategoryRepository_Create(t *testing.T) {
 }
 
 func TestCategoryRepository_Get(t *testing.T) {
-	type fields struct {
-		store *Store
+	store, truncate := GetTestDBStore(t)
+	defer truncate("category", "\"user\"")
+
+	u1 := model.GetUser()
+	u2 := model.GetUser()
+	u2.Id = 5
+	cat1 := model.GetCategory(model.Consumption, 0, 0, true, false)
+	cat2 := model.GetCategory(model.Consumption, int(u2.Id), 0, true, false)
+
+	r := &UserRepository{
+		store: store,
 	}
-	type args struct {
-		userId int
+	err := r.Create(u1)
+	if err != nil {
+		t.Fatal("пользователь не может быть создан")
 	}
+	err = r.Create(u2)
+	if err != nil {
+		t.Fatal("пользователь не может быть создан")
+	}
+
+	c := &CategoryRepository{
+		store: store,
+	}
+	err = c.Create(cat1)
+	if err != nil {
+		t.Fatal("категория не может быть создана")
+	}
+	err = c.Create(cat2)
+	if err != nil {
+		t.Fatal("категория не может быть создана")
+	}
+
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		store   *Store
+		userId  int
 		want    []model.Category
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"get categories for user without individual categories",
+			store,
+			int(u1.Id),
+			[]model.Category{*cat1},
+			false,
+		},
+		{
+			"get categories for user with individual categories",
+			store,
+			int(u2.Id),
+			[]model.Category{*cat1, *cat2},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				store: tt.fields.store,
+				store: tt.store,
 			}
-			got, err := r.Get(tt.args.userId)
+			got, err := r.Get(tt.userId)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -68,30 +127,30 @@ func TestCategoryRepository_Get(t *testing.T) {
 }
 
 func TestCategoryRepository_GetSystem(t *testing.T) {
-	type fields struct {
-		store *Store
-	}
+	store, truncate := GetTestDBStore(t)
+	defer truncate()
 	tests := []struct {
 		name    string
-		fields  fields
-		want    []model.Category
+		store   *Store
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"test get system",
+			store,
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &CategoryRepository{
-				store: tt.fields.store,
+				store: tt.store,
 			}
-			got, err := r.GetSystem()
+			_, err := r.GetSystem()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetSystem() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetSystem() got = %v, want %v", got, tt.want)
-			}
+
 		})
 	}
 }
@@ -111,7 +170,42 @@ func Test_category_toModel(t *testing.T) {
 		fields fields
 		want   model.Category
 	}{
-		// TODO: Add test cases.
+		{
+			"test 1",
+			fields{
+				Id:       1,
+				Name:     "test",
+				Type:     1,
+				IsEnd:    true,
+				IsSystem: false,
+			},
+			model.Category{Id: 1, Name: "test", Type: 1, IsEnd: true},
+		},
+		{
+			"id parent not null",
+			fields{
+				Id:       1,
+				Name:     "test",
+				Type:     1,
+				IdParent: sql.NullInt64{Int64: 12, Valid: true},
+				IsEnd:    true,
+				IsSystem: false,
+			},
+			model.Category{Id: 1, Name: "test", Type: 1, IdParent: 12, IsEnd: true},
+		},
+		{
+			"id parent not null",
+			fields{
+				Id:       1,
+				Name:     "test",
+				Type:     1,
+				IdParent: sql.NullInt64{Int64: 12, Valid: true},
+				IdOwner:  sql.NullInt64{Int64: 2, Valid: true},
+				IsEnd:    true,
+				IsSystem: false,
+			},
+			model.Category{Id: 1, Name: "test", Type: 1, IdOwner: 2, IdParent: 12, IsEnd: true},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

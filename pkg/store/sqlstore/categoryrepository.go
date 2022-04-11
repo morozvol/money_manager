@@ -23,15 +23,23 @@ func (c category) toModel() model.Category {
 }
 
 func (r *CategoryRepository) Create(c *model.Category) error {
-	return r.store.db.QueryRowx(
-		"INSERT INTO category (name, type, id_owner, id_parent_category, is_end, is_system) VALUES ($1,$2,$3,$4,$5,$5)",
-		c.Name,
-		c.Type,
-		c.IdOwner,
-		c.IdParent,
-		c.IsEnd,
-		false,
-	).Err()
+	var idOwner sql.NullInt64
+	var idParent sql.NullInt64
+	if c.IdParent != 0 {
+		idParent.Int64 = int64(c.IdParent)
+		idParent.Valid = true
+	}
+	if c.IdOwner != 0 {
+		idOwner.Int64 = int64(c.IdOwner)
+		idOwner.Valid = true
+	}
+	lastInsertId := 0
+	err := r.store.db.QueryRow("INSERT INTO category (name, type, id_owner, id_parent_category, is_end, is_system) VALUES($1,$2,$3,$4,$5,$6) RETURNING id;", c.Name, c.Type, idOwner, idParent, c.IsEnd, c.IsSystem).Scan(&lastInsertId)
+	if err != nil {
+		return err
+	}
+	c.Id = int64(lastInsertId)
+	return nil
 }
 
 func (r *CategoryRepository) Get(userId int) ([]model.Category, error) {
