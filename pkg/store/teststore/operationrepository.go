@@ -3,6 +3,7 @@ package teststore
 import (
 	"github.com/morozvol/money_manager/pkg/model"
 	"github.com/morozvol/money_manager/pkg/store"
+	"time"
 )
 
 type OperationRepository struct {
@@ -13,8 +14,8 @@ type OperationRepository struct {
 // Create ...
 func (r *OperationRepository) Create(o ...*model.Operation) error {
 	for _, oper := range o {
-		oper.Id = int(len(r.operations) + 1)
-		r.operations[int(oper.Id)] = oper
+		oper.Id = len(r.operations) + 1
+		r.operations[oper.Id] = oper
 	}
 	return nil
 }
@@ -27,4 +28,9 @@ func (r *OperationRepository) Find(id int) (*model.Operation, error) {
 	}
 
 	return o, nil
+}
+
+func (r *OperationRepository) Get(timeFrom, timeTo time.Time) ([]model.Operation, error) {
+
+	return nil, nil
 }

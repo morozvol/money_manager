@@ -8,6 +8,7 @@ import (
 type CategoryRepository struct {
 	store *Store
 }
+
 type category struct {
 	Id       int                        `db:"id"`
 	Name     string                     `db:"name"`
@@ -38,14 +39,14 @@ func (r *CategoryRepository) Create(c *model.Category) error {
 	if err != nil {
 		return err
 	}
-	c.Id = int(lastInsertId)
+	c.Id = lastInsertId
 	return nil
 }
 
 func (r *CategoryRepository) Get(userId int) ([]model.Category, error) {
 	c := category{}
 	res := make([]model.Category, 0)
-	rows, err := r.store.db.Queryx("SELECT id, name, type, id_owner, id_parent_category, is_end FROM category WHERE (id_owner IS NULL OR id_owner = $1) AND is_system = false;", userId)
+	rows, err := r.store.db.Queryx("SELECT id, name, type, id_owner, id_parent_category, is_end FROM category WHERE (id_owner IS NULL OR id_owner = $1)", userId)
 	if err != nil {
 		return nil, err
 	}
@@ -74,4 +75,12 @@ func (r *CategoryRepository) GetSystem() ([]model.Category, error) {
 		res = append(res, c.toModel())
 	}
 	return res, nil
+}
+
+func (r *CategoryRepository) Delete(id int) error {
+	_, err := r.store.db.Queryx("DELETE FROM category WHERE id = $1;", id)
+	if err != nil {
+		return err
+	}
+	return nil
 }

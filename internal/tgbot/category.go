@@ -10,33 +10,42 @@ import (
 
 func (bot *tgbot) categoriesKeyboard(uc *o.UserChat, messageChannel chan string, editor *bt.MessageEditor, parentCtx context.Context) (*model.Category, error) {
 	categories := bot.getUserCategories(uc.UserId)
-	id := 0
-	lastId := 0
+	id := 1
+	lastId := 1
 
-	kb := bot.CreateInlineKeyboard()
-	for i, c := range categories.GetCategoriesByIdParent(id) {
-		kb.AddCallbackButton(fmt.Sprintf("%s", c.Name),
-			fmt.Sprintf("id category: %d", c.Id), int(i/2)+1)
-	}
-
-	msg, err := bot.sendInlineKeyboard(uc, "Выбор категории", kb)
+	msg, err := bot.sendInlineKeyboard(uc, "Выбор категории", nil)
 	if err != nil {
-		bot.error(err, "categoriesKeyboard: ообщение не отправлено", nil)
+		bot.error(err, "categoriesKeyboard: "+ErrSendMessage.Error(), nil)
 	}
 
 	defer func() {
 		_, err := editor.DeleteMessage(msg.MessageId)
 		if err != nil {
-			bot.error(err, "categoriesKeyboard: не удалось удалить сообщение", msg)
+			bot.error(err, "categoriesKeyboard: "+ErrDeleteMessage.Error(), msg)
 		}
 	}()
 
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
-	go bot.RegisterChannel(uc, "callback_query", "id category", messageChannel, ctx)
+	go bot.registerChannel(uc, "callback_query", "id category", messageChannel, ctx)
 
 	for {
+		kb := bot.CreateInlineKeyboard()
+
+		cat := categories.GetCategoriesByIdParent(id)
+
+		for i, c := range cat {
+			kb.AddCallbackButton(fmt.Sprintf("%s", c.Name), fmt.Sprintf("id category: %d", c.Id), int(i/2)+1)
+		}
+		if id != 1 {
+			kb.AddCallbackButton(fmt.Sprintf("%s", "Назад"), fmt.Sprintf("id category: %d", lastId), int((len(cat)-1)/2)+1+1)
+		}
+		_, err = editor.EditReplyMarkup(msg.MessageId, "", kb)
+		if err != nil {
+			bot.error(err, "categoriesKeyboard: "+ErrEditMessage.Error(), msg)
+		}
+
 		val, err := getIntFromChannel(messageChannel, ctx)
 		if err != nil {
 			return nil, err
@@ -44,7 +53,7 @@ func (bot *tgbot) categoriesKeyboard(uc *o.UserChat, messageChannel chan string,
 		lastId = id
 		id = val
 
-		if id != 0 {
+		if id != 1 {
 			category, err := categories.GetCategoryById(id)
 			if err != nil {
 				bot.error(err, "categoriesKeyboard: Категория не существует", id)
@@ -54,21 +63,6 @@ func (bot *tgbot) categoriesKeyboard(uc *o.UserChat, messageChannel chan string,
 			if category.IsEnd {
 				return category, nil
 			}
-		}
-		kb := bot.CreateInlineKeyboard()
-
-		cat := categories.GetCategoriesByIdParent(id)
-
-		for i, c := range cat {
-			kb.AddCallbackButton(fmt.Sprintf("%s", c.Name), fmt.Sprintf("id category: %d", c.Id), int(i/2)+1)
-		}
-		if id != 0 {
-			kb.AddCallbackButton(fmt.Sprintf("%s", "Назад"), fmt.Sprintf("id category: %d", lastId), int((len(cat)-1)/2)+1+1)
-
-		}
-		_, err = editor.EditReplyMarkup(msg.MessageId, "", kb)
-		if err != nil {
-			bot.error(err, "categoriesKeyboard: Не удалось изменить сообщение", msg)
 		}
 	}
 }

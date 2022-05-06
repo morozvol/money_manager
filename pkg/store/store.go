@@ -7,4 +7,6 @@ type Store interface {
 	Operation() OperationRepository
 	Currency() CurrencyRepository
 	Category() CategoryRepository
+	CategoryLimit() CategoryLimitRepository
+	ExchangeRate() ExchangeRateRepository
 }

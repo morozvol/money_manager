@@ -6,21 +6,30 @@ import (
 	objs "github.com/SakoDroid/telego/objects"
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 	"github.com/morozvol/money_manager/pkg/core/exchange"
+	"github.com/morozvol/money_manager/pkg/core/system_category"
 	"github.com/morozvol/money_manager/pkg/model"
 )
 
-func (bot *tgbot) addPaymentOperation(u *objs.Update) {
-	bot.beforeExecution(u)
+func (bot *tgbot) newPay(u *objs.Update) {
+	bot.addPaymentOperation(u, model.Consumption)
+}
+func (bot *tgbot) newComing(u *objs.Update) {
+	bot.addPaymentOperation(u, model.Coming)
+}
 
+func (bot *tgbot) addPaymentOperation(u *objs.Update, ot model.OperationPaymentType) {
 	uc := &o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
+	if !bot.beforeExecution(uc) {
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	bot.taskCancel.Store(*uc, cancel)
+	defer bot.taskCancel.Cancel(*uc)
 
 	user, err := bot.store.User().Find(uc.UserId)
 	if err != nil {
-		bot.help(u)
 		return
 	}
 	operation := model.Operation{}
@@ -34,22 +43,31 @@ func (bot *tgbot) addPaymentOperation(u *objs.Update) {
 	}
 	operation.IdAccount = account.Id
 
-	cat, err := bot.categoriesKeyboard(uc, msgChannel, msgEditor, ctx)
-	if err != nil {
-		return
+	if ot == model.Coming {
+		operation.Category = system_category.GetCategory(bot.store).IdComing
+	} else {
+		cat, err := bot.categoriesKeyboard(uc, msgChannel, msgEditor, ctx)
+		if err != nil {
+			return
+		}
+		operation.Category = *cat
 	}
-	operation.Category = *cat
-
-	currency, err := bot.chooseCurrency(user, uc, msgChannel, msgEditor, ctx, true)
-	if err != nil {
-		return
+	var currency *model.Currency
+	if ot == model.Coming {
+		currency = &account.Currency
+	} else {
+		currency, err = bot.chooseCurrency(user, uc, msgChannel, msgEditor, ctx, true)
+		if err != nil {
+			return
+		}
 	}
 
 	sum, err := bot.getFloat(uc, msgChannel, "Введите сумму", ctx)
 	if err != nil {
 		return
 	}
-	rate, err := exchange.Exchange(currency, account)
+
+	rate, err := exchange.Exchange(currency, account, bot.store)
 	if err != nil {
 		bot.sendText(uc.ChatId, "Ошибка. Не удалось получить курс "+currency.Code+"/"+account.Currency.Code+".")
 		bot.error(err, "addPaymentOperation", nil)

@@ -51,7 +51,7 @@ func (r *OperationRepository) Create(o ...*model.Operation) error {
 func (r *OperationRepository) Find(id int) (*model.Operation, error) {
 	u := &model.Operation{}
 	if err := r.store.db.QueryRowx(
-		"SELECT id, id_account, time, sum FROM operation WHERE id = $1",
+		"SELECT id, id_account, time, sum, description FROM operation WHERE id = $1",
 		id,
 	).StructScan(u); err != nil {
 		if err == sql.ErrNoRows {
@@ -62,4 +62,20 @@ func (r *OperationRepository) Find(id int) (*model.Operation, error) {
 	}
 
 	return u, nil
+}
+func (r *OperationRepository) Get(dateFrom, dateTo time.Time) ([]model.Operation, error) {
+	c := model.Operation{}
+	res := make([]model.Operation, 0)
+	rows, err := r.store.db.Queryx("SELECT id, id_account, time, sum, description FROM operations WHERE time BETWEEN $1 AND $2", dateFrom, dateTo)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err := rows.StructScan(&c)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, c)
+	}
+	return res, nil
 }

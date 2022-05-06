@@ -23,7 +23,7 @@ func TestOperationRepository_Create(t *testing.T) {
 
 	u := model.GetUser()
 
-	ac := model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1})
+	ac := model.GetAccount100(u.Id, model.Card, model.Currency{Id: 1})
 
 	cat := model.GetCategory(model.Consumption, 0, 0, true, false)
 
@@ -102,7 +102,7 @@ func TestOperationRepository_Find(t *testing.T) {
 		t.Fatal("Категория не может быть создана")
 	}
 
-	ac := model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1})
+	ac := model.GetAccount100(u.Id, model.Card, model.Currency{Id: 1})
 	err = ar.Create(ac)
 	if err != nil {
 		t.Fatal("счёт не может быть создан")
@@ -123,7 +123,7 @@ func TestOperationRepository_Find(t *testing.T) {
 		{
 			"test",
 			store,
-			int(o1.Id),
+			o1.Id,
 			false,
 		},
 	}

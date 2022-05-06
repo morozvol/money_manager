@@ -29,19 +29,19 @@ func (bot *tgbot) chooseCurrency(u *model.User, uc *o.UserChat, messageChannel c
 
 	msg, err := bot.sendInlineKeyboard(uc, "Выбор валюты оплаты", kb)
 	if err != nil {
-		bot.error(err, "chooseCurrency: не удалось отправить сообщение", nil)
+		bot.error(err, "chooseCurrency: "+ErrSendMessage.Error(), nil)
 	}
 	defer func() {
 		_, err := editor.DeleteMessage(msg.MessageId)
 		if err != nil {
-			bot.error(err, "chooseCurrency: не удалось удалить сообщение", msg)
+			bot.error(err, "chooseCurrency: "+ErrDeleteMessage.Error(), msg)
 		}
 	}()
 
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
-	go bot.RegisterChannel(uc, "callback_query", "id currency", messageChannel, ctx)
+	go bot.registerChannel(uc, "callback_query", "id currency", messageChannel, ctx)
 
 	val, err := getIntFromChannel(messageChannel, ctx)
 	if err == nil {

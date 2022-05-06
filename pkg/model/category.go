@@ -1,6 +1,8 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Category struct {
 	Id       int                  `db:"id"`
@@ -33,4 +35,14 @@ func (cs Categories) GetCategoryById(id int) (*Category, error) {
 		}
 	}
 	return nil, fmt.Errorf("Category with id=%d does not exist ", id)
+}
+
+func (cs Categories) DeleteById(id int) Categories {
+	index := 0
+	for i, c := range cs {
+		if c.Id == id {
+			index = i
+		}
+	}
+	return append(cs[:index], cs[index+1:]...)
 }

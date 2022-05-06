@@ -12,8 +12,8 @@ type AccountRepository struct {
 
 // Create ...
 func (r *AccountRepository) Create(a *model.Account) error {
-	a.Id = int(len(r.accounts) + 1)
-	r.accounts[int(a.Id)] = a
+	a.Id = len(r.accounts) + 1
+	r.accounts[a.Id] = a
 
 	return nil
 }

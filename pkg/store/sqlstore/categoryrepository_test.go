@@ -61,7 +61,7 @@ func TestCategoryRepository_Get(t *testing.T) {
 	u2 := model.GetUser()
 	u2.Id = 5
 	cat1 := model.GetCategory(model.Consumption, 0, 0, true, false)
-	cat2 := model.GetCategory(model.Consumption, int(u2.Id), 0, true, false)
+	cat2 := model.GetCategory(model.Consumption, u2.Id, 0, true, false)
 
 	r := &UserRepository{
 		store: store,
@@ -97,14 +97,14 @@ func TestCategoryRepository_Get(t *testing.T) {
 		{
 			"get categories for user without individual categories",
 			store,
-			int(u1.Id),
+			u1.Id,
 			[]model.Category{*cat1},
 			false,
 		},
 		{
 			"get categories for user with individual categories",
 			store,
-			int(u2.Id),
+			u2.Id,
 			[]model.Category{*cat1, *cat2},
 			false,
 		},

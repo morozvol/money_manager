@@ -1,7 +1,8 @@
 package store
 
 import (
-	model "github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/model"
+	"time"
 )
 
 // UserRepository ...
@@ -21,6 +22,7 @@ type AccountRepository interface {
 type OperationRepository interface {
 	Create(operation ...*model.Operation) error
 	Find(int) (*model.Operation, error)
+	Get(time.Time, time.Time) ([]model.Operation, error)
 }
 
 // CurrencyRepository ...
@@ -34,4 +36,11 @@ type CategoryRepository interface {
 	Create(category *model.Category) error
 	Get(int) ([]model.Category, error)
 	GetSystem() ([]model.Category, error)
+	Delete(int) error
+}
+type CategoryLimitRepository interface {
+}
+type ExchangeRateRepository interface {
+	Get(int, int, time.Time) (float32, error)
+	Create(rate *model.ExchangeRate) error
 }

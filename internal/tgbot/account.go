@@ -13,16 +13,16 @@ import (
 )
 
 func (bot *tgbot) addAccount(u *objects.Update) {
-	bot.beforeExecution(u)
-
 	uc := &o.UserChat{UserId: u.Message.From.Id, ChatId: u.Message.Chat.Id}
-
+	if !bot.beforeExecution(uc) {
+		return
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	bot.taskCancel.Store(*uc, cancel)
+	defer bot.taskCancel.Cancel(*uc)
 
 	user, err := bot.store.User().Find(uc.UserId)
 	if err != nil {
-		bot.help(u)
 		return
 	}
 	account := model.Account{}
@@ -71,20 +71,20 @@ func (bot *tgbot) accountsKeyboard(uc *o.UserChat, messageChannel chan string, e
 
 	msg, err := bot.sendInlineKeyboard(uc, "Выбор счёта", kb)
 	if err != nil {
-		bot.error(err, "accountsKeyboard", nil)
+		bot.error(err, "accountsKeyboard: "+ErrSendMessage.Error(), nil)
 	}
 
 	defer func() {
 		_, err := editor.DeleteMessage(msg.MessageId)
 		if err != nil {
-			bot.error(err, "accountsKeyboard: не удалось удалить сообщение", msg)
+			bot.error(err, "accountsKeyboard: "+ErrDeleteMessage.Error(), msg)
 		}
 	}()
 
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
-	go bot.RegisterChannel(uc, "callback_query", "id account", messageChannel, ctx)
+	go bot.registerChannel(uc, "callback_query", "id account", messageChannel, ctx)
 
 	val, err := getIntFromChannel(messageChannel, ctx)
 	if err != nil {

@@ -2,6 +2,7 @@ package teststore
 
 import (
 	"github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/store"
 )
 
 type CategoryRepository struct {
@@ -10,8 +11,8 @@ type CategoryRepository struct {
 }
 
 func (r *CategoryRepository) Create(c *model.Category) error {
-	c.Id = int(len(r.categories) + 1)
-	r.categories[int(c.Id)] = c
+	c.Id = len(r.categories) + 1
+	r.categories[c.Id] = c
 	return nil
 }
 
@@ -35,4 +36,13 @@ func (r *CategoryRepository) GetSystem() ([]model.Category, error) {
 		}
 	}
 	return res, nil
+}
+
+func (r *CategoryRepository) Delete(id int) error {
+	_, ok := r.categories[id]
+	if !ok {
+		return store.ErrRecordNotFound
+	}
+	delete(r.categories, id)
+	return nil
 }

@@ -27,25 +27,25 @@ func TestAccountRepository_Create(t *testing.T) {
 		{
 			"valid",
 			store,
-			model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1}),
+			model.GetAccount100(u.Id, model.Card, model.Currency{Id: 1}),
 			false,
 		},
 		{
 			"valid duplicate",
 			store,
-			model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1}),
+			model.GetAccount100(u.Id, model.Card, model.Currency{Id: 1}),
 			false,
 		},
 		{
 			"invalid currency non exist",
 			store,
-			model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 15}),
+			model.GetAccount100(u.Id, model.Card, model.Currency{Id: 15}),
 			true,
 		},
 		{
 			"invalid type non exist",
 			store,
-			model.GetAccount100(int(u.Id), 15, model.Currency{Id: 1}),
+			model.GetAccount100(u.Id, 15, model.Currency{Id: 1}),
 			true,
 		},
 	}
@@ -75,7 +75,7 @@ func TestAccountRepository_Find(t *testing.T) {
 
 	u := model.GetUser()
 
-	ac := model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1})
+	ac := model.GetAccount100(u.Id, model.Card, model.Currency{Id: 1})
 
 	err := r.Create(u)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestAccountRepository_FindByUserId(t *testing.T) {
 	u := model.GetUser()
 	u1 := model.GetUser()
 	u1.Id = 5
-	ac := model.GetAccount100(int(u.Id), model.Card, model.Currency{Id: 1})
+	ac := model.GetAccount100(u.Id, model.Card, model.Currency{Id: 1})
 
 	r := &UserRepository{
 		store: store,
