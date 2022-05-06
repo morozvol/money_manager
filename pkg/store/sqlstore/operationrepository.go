@@ -63,7 +63,7 @@ func (r *OperationRepository) Find(id int) (*model.Operation, error) {
 
 	return u, nil
 }
-func (r *OperationRepository) Get(dateFrom, dateTo time.Time) ([]model.Operation, error) {
+func (r *OperationRepository) Get(dateFrom, dateTo time.Time, idUser int) ([]model.Operation, error) {
 	c := model.Operation{}
 	res := make([]model.Operation, 0)
 	rows, err := r.store.db.Queryx("SELECT id, id_account, time, sum, description FROM operations WHERE time BETWEEN $1 AND $2", dateFrom, dateTo)

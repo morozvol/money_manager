@@ -15,7 +15,7 @@ func (bot *tgbot) getSpendingPerWeek(u *objs.Update) {
 	periodFrom := today.AddDate(0, 0, -day)
 	periodTo := today.AddDate(0, 0, 1)
 
-	_, err := bot.store.Operation().Get(periodFrom, periodTo)
+	_, err := bot.store.Operation().Get(periodFrom, periodTo, u.Message.From.Id)
 	if err != nil {
 		return
 	}

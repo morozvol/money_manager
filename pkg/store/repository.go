@@ -22,7 +22,7 @@ type AccountRepository interface {
 type OperationRepository interface {
 	Create(operation ...*model.Operation) error
 	Find(int) (*model.Operation, error)
-	Get(time.Time, time.Time) ([]model.Operation, error)
+	Get(time.Time, time.Time, int) ([]model.Operation, error)
 }
 
 // CurrencyRepository ...
