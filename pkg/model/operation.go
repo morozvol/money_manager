@@ -15,10 +15,10 @@ const (
 )
 
 type Operation struct {
-	Id          int       `db:"id" json:"id"`
-	IdAccount   int       `db:"id_account" json:"id_account"`
-	Time        time.Time `db:"time" json:"time"`
-	Sum         float32   `db:"sum" json:"sum"`
-	Category    Category  `db:"category" json:"category"`
+	Id          int       `db:"id"          json:"id"`
+	IdAccount   int       `db:"id_account"  json:"id_account"     validate:"required"`
+	Time        time.Time `db:"time"        json:"time,omitempty"`
+	Sum         float32   `db:"sum"         json:"sum"            validate:"required"`
+	Category    Category  `db:"category"    json:"category"       validate:"required"`
 	Description string    `db:"description" json:"description"`
 }
