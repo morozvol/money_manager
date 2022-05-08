@@ -13,8 +13,8 @@ func (at AccountTypes) ToString() string {
 }
 
 type AccountType struct {
-	Id          AccountTypes `db:"id"`
-	Name        string       `db:"name"`
-	Symbol      string       `db:"symbol"`
-	Description string       `db:"description"`
+	Id          AccountTypes `db:"id" json:"id"`
+	Name        string       `db:"name" json:"name"`
+	Symbol      string       `db:"symbol" json:"symbol"`
+	Description string       `db:"description" json:"description"`
 }

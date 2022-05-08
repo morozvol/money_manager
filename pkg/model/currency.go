@@ -1,7 +1,7 @@
 package model
 
 type Currency struct {
-	Id   int    `db:"id"`
-	Code string `db:"code"`
-	Name string `db:"name"`
+	Id   int    `db:"id" json:"id"`
+	Code string `db:"code" json:"code"`
+	Name string `db:"name" json:"name"`
 }
