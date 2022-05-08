@@ -6,7 +6,7 @@ import (
 )
 
 type CategoryTree struct {
-	Root *Node
+	Root *Node `json:"root"`
 	m    map[int]*Node
 }
 
@@ -38,12 +38,12 @@ func (n CategoryTree) FindNode(id int) (*Node, error) {
 func (n CategoryTree) DeleteNode(node *Node) {
 	idParent := node.Category.IdParent
 	delete(n.m, node.Category.Id)
-	cs := n.m[idParent].children
+	cs := n.m[idParent].Children
 	index := 0
 	for i, c := range cs {
 		if c.Category.Id == node.Category.Id {
 			index = i
 		}
 	}
-	n.m[idParent].children = append(cs[:index], cs[index+1:]...)
+	n.m[idParent].Children = append(cs[:index], cs[index+1:]...)
 }

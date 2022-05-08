@@ -3,15 +3,15 @@ package category_tree
 import "github.com/morozvol/money_manager/pkg/model"
 
 type Node struct {
-	Category *model.Category
-	children Nodes
-	tree     CategoryTree
+	Category *model.Category `json:"category"`
+	Children Nodes           `json:"children"`
+	tree     CategoryTree    `json:"-"`
 }
 
 type Nodes []*Node
 
 func (n Node) GetChildren() Nodes {
-	return n.children
+	return n.Children
 }
 
 func (nodes Nodes) ToCategories() []model.Category {
@@ -24,14 +24,14 @@ func (nodes Nodes) ToCategories() []model.Category {
 
 func (n *Node) AddChild(nodes ...*Node) {
 	for _, node := range nodes {
-		n.children = append(n.children, node)
+		n.Children = append(n.Children, node)
 	}
 }
 
 func NewNode(c model.Category, tree *CategoryTree) *Node {
 	n := &Node{
 		Category: &c,
-		children: make(Nodes, 0),
+		Children: make(Nodes, 0),
 	}
 	if tree != nil {
 		tree.m[c.Id] = n
