@@ -22,7 +22,7 @@ func main() {
 	logger.WithOptions(zap.IncreaseLevel(zapcore.DebugLevel))
 	zap.ReplaceGlobals(logger)
 
-	dataBase, err := db.New(conf, logger)
+	dataBase, err := db.New(conf.DB, logger)
 	if err != nil {
 		logger.Fatal(err.Error())
 		return

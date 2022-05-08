@@ -6,16 +6,16 @@ import (
 	"github.com/jackc/pgx/v4/log/zapadapter"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/morozvol/money_manager/internal/config"
+	config "github.com/morozvol/money_manager/pkg/store/sqlstore/config"
 	"go.uber.org/zap"
 	"time"
 )
 
 // New return sqlx.DB
-func New(config *config.Config, logger *zap.Logger) (*sqlx.DB, error) {
+func New(config *config.DBConfig, logger *zap.Logger) (*sqlx.DB, error) {
 
 	// parse connection string
-	dbConf, err := pgx.ParseConfig(config.DB.GetConnactionString())
+	dbConf, err := pgx.ParseConfig(config.GetConnactionString())
 	if err != nil {
 		return nil, err
 	}
