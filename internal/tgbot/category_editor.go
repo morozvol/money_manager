@@ -7,6 +7,7 @@ import (
 	objs "github.com/SakoDroid/telego/objects"
 	o "github.com/morozvol/money_manager/internal/tgbot/objects"
 	"github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/model/category_tree"
 	"html"
 )
 
@@ -29,8 +30,7 @@ func (bot *tgbot) editCategories(uc *o.UserChat, messageChannel chan string, edi
 	categories := bot.getUserCategories(uc.UserId)
 	var symbol string
 	isUpdateKeyboard := true
-	id := 1
-	lastId := 1
+	OpenNode := categories.Root
 
 	msg, err := bot.sendInlineKeyboard(uc, "Выбор категории", nil)
 	if err != nil {
@@ -53,7 +53,7 @@ func (bot *tgbot) editCategories(uc *o.UserChat, messageChannel chan string, edi
 		if isUpdateKeyboard {
 			kb := bot.CreateInlineKeyboard()
 
-			cat := categories.GetCategoriesByIdParent(id)
+			cat := OpenNode.GetChildren().ToCategories()
 			line := 1
 			for _, c := range cat {
 				if c.IsEnd {
@@ -68,11 +68,11 @@ func (bot *tgbot) editCategories(uc *o.UserChat, messageChannel chan string, edi
 				line++
 			}
 
-			kb.AddCallbackButton(fmt.Sprintf("%s", "Создать папку"), fmt.Sprintf("id category editor: %d %d", id, createDirectory), line)
-			kb.AddCallbackButton(fmt.Sprintf("%s", "Создать категорию"), fmt.Sprintf("id category editor: %d %d", id, createCategory), line)
+			kb.AddCallbackButton(fmt.Sprintf("%s", "Создать папку"), fmt.Sprintf("id category editor: %d %d", OpenNode.Category.Id, createDirectory), line)
+			kb.AddCallbackButton(fmt.Sprintf("%s", "Создать категорию"), fmt.Sprintf("id category editor: %d %d", OpenNode.Category.Id, createCategory), line)
 			line++
-			if id != 1 {
-				kb.AddCallbackButton(fmt.Sprintf("%s", " <- Назад"), fmt.Sprintf("id category editor: %d %d", lastId, open), line)
+			if OpenNode != categories.Root {
+				kb.AddCallbackButton(fmt.Sprintf("%s", " <- Назад"), fmt.Sprintf("id category editor: %d %d", OpenNode.Category.IdParent, open), line)
 			}
 			kb.AddCallbackButton(fmt.Sprintf("%s", "Сохранить изменения"), fmt.Sprintf("id category editor: %d %d", 1, save), line)
 
@@ -86,24 +86,23 @@ func (bot *tgbot) editCategories(uc *o.UserChat, messageChannel chan string, edi
 		if err != nil {
 			return err
 		}
-		category, err := categories.GetCategoryById(idCategory)
+		node, err := categories.FindNode(idCategory)
 		if err != nil {
-			bot.error(err, "categoriesKeyboard: Категория не существует", id)
+			bot.error(err, "categoriesKeyboard: Категория не существует", idCategory)
 			return ErrUnknown
 		}
 
 		switch action {
 		case open:
-			if category.IsEnd {
+			if node.Category.IsEnd {
 				isUpdateKeyboard = false
 			} else {
-				lastId = id
-				id = idCategory
+				OpenNode = node
 				isUpdateKeyboard = true
 			}
 
 		case deleteCategory:
-			categories = categories.DeleteById(idCategory)
+			categories.DeleteNode(node)
 			isUpdateKeyboard = true
 		case edit:
 			//edit category with id = idCategory
@@ -114,7 +113,7 @@ func (bot *tgbot) editCategories(uc *o.UserChat, messageChannel chan string, edi
 			if err != nil {
 				return err
 			}
-			categories = append(categories, *cat)
+			node.AddChild(category_tree.NewNode(*cat, categories))
 			isUpdateKeyboard = true
 		case createDirectory:
 			cat := &model.Category{IdOwner: uc.UserId, IdParent: idCategory, IsEnd: false, IsSystem: false}
@@ -122,7 +121,7 @@ func (bot *tgbot) editCategories(uc *o.UserChat, messageChannel chan string, edi
 			if err != nil {
 				return err
 			}
-			categories = append(categories, *cat)
+			node.AddChild(category_tree.NewNode(*cat, categories))
 			isUpdateKeyboard = true
 		case save:
 			return nil
