@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/model/category_tree"
 	"time"
 )
 
@@ -34,7 +35,7 @@ type CurrencyRepository interface {
 // CategoryRepository ...
 type CategoryRepository interface {
 	Create(category *model.Category) error
-	Get(int) ([]model.Category, error)
+	Get(int) (*category_tree.CategoryTree, error)
 	GetSystem() ([]model.Category, error)
 	Delete(int) error
 }
