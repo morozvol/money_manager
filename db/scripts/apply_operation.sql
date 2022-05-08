@@ -16,6 +16,7 @@ declare
     bal           float := 0;
     category_type int;
     p_id          int;
+    p_id_user     int;
 begin
 
     SELECT type
@@ -28,12 +29,17 @@ begin
     from account
     where id = p_id_account;
 
+    SELECT id_user
+    into p_id_user
+    from account
+    where id = p_id_account;
+
     IF bal < 0 THEN
         RAISE 'На счету недостаточно средств для проведения операции' USING ERRCODE = '23505';
     ELSE
 
-        INSERT INTO operation(time, sum, id_category, id_account, description)
-        VALUES (p_time, p_sum, p_id_category, p_id_account, p_description)
+        INSERT INTO operation(time, sum, id_category, id_account, description, id_user)
+        VALUES (p_time, p_sum, p_id_category, p_id_account, p_description, p_id_user)
         RETURNING id INTO p_id;
 
         UPDATE account

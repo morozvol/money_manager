@@ -2,17 +2,19 @@ package sqlstore
 
 import (
 	"github.com/jmoiron/sqlx"
-	store "github.com/morozvol/money_manager/pkg/store"
+	"github.com/morozvol/money_manager/pkg/store"
 )
 
 // Store ...
 type Store struct {
-	db                  *sqlx.DB
-	userRepository      *UserRepository
-	accountRepository   *AccountRepository
-	operationRepository *OperationRepository
-	currencyRepository  *CurrencyRepository
-	categoryRepository  *CategoryRepository
+	db                      *sqlx.DB
+	userRepository          *UserRepository
+	accountRepository       *AccountRepository
+	operationRepository     *OperationRepository
+	currencyRepository      *CurrencyRepository
+	categoryRepository      *CategoryRepository
+	categoryLimitRepository *CategoryLimitRepository
+	exchangeRateRepository  *ExchangeRateRepository
 }
 
 // New ...
@@ -84,4 +86,28 @@ func (s *Store) Category() store.CategoryRepository {
 	}
 
 	return s.categoryRepository
+}
+
+func (s *Store) CategoryLimit() store.CategoryLimitRepository {
+	if s.categoryLimitRepository != nil {
+		return s.categoryLimitRepository
+	}
+
+	s.categoryLimitRepository = &CategoryLimitRepository{
+		store: s,
+	}
+
+	return s.categoryLimitRepository
+}
+
+func (s *Store) ExchangeRate() store.ExchangeRateRepository {
+	if s.exchangeRateRepository != nil {
+		return s.exchangeRateRepository
+	}
+
+	s.exchangeRateRepository = &ExchangeRateRepository{
+		store: s,
+	}
+
+	return s.exchangeRateRepository
 }

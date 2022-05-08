@@ -14,8 +14,8 @@ type UserRepository struct {
 // Create ...
 func (r *UserRepository) Create(u *model.User) error {
 
-	u.Id = int64(len(r.users) + 1)
-	r.users[int(u.Id)] = u
+	u.Id = len(r.users) + 1
+	r.users[u.Id] = u
 
 	return nil
 }

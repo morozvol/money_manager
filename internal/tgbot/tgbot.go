@@ -49,16 +49,17 @@ func New(store store.Store, conf *config.Config) (*tgbot, error) {
 }
 
 func (bot *tgbot) Start() error {
-	if err := bot.AddHandler("/register", bot.register, "private", "group"); err != nil {
-		return err
-	}
+
 	if err := bot.AddHandler("/help", bot.help, "private", "group"); err != nil {
 		return err
 	}
 	if err := bot.AddHandler("/add_account", bot.addAccount, "private", "group"); err != nil {
 		return err
 	}
-	if err := bot.AddHandler("/add_operation", bot.addPaymentOperation, "private", "group"); err != nil {
+	if err := bot.AddHandler("/coming", bot.newComing, "private", "group"); err != nil {
+		return err
+	}
+	if err := bot.AddHandler("/pay", bot.newPay, "private", "group"); err != nil {
 		return err
 	}
 	if err := bot.AddHandler("/add_transfer", bot.addTransferOperation, "private", "group"); err != nil {
@@ -68,6 +69,12 @@ func (bot *tgbot) Start() error {
 		return err
 	}
 	if err := bot.AddHandler("/cancel", bot.cancelOperation, "private", "group"); err != nil {
+		return err
+	}
+	if err := bot.AddHandler("/edit", bot.editCategory, "private", "group"); err != nil {
+		return err
+	}
+	if err := bot.AddHandler("/reports", bot.getSpendingPerWeek, "private", "group"); err != nil {
 		return err
 	}
 

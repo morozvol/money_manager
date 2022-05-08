@@ -5,9 +5,39 @@ import (
 	exr "github.com/me-io/go-swap/pkg/exchanger"
 	"github.com/me-io/go-swap/pkg/swap"
 	"github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/store"
+	"time"
 )
 
 var MainCurrency = &model.Currency{Id: 1, Code: "USD"}
+
+func getRate(currencyFrom *model.Currency, currencyTo *model.Currency, s store.Store) (rate float32, err error) {
+	rate, err = s.ExchangeRate().Get(currencyFrom.Id, currencyTo.Id, time.Now())
+	if err != nil {
+
+		rate, err = exchange(currencyFrom, currencyTo)
+		if err != nil {
+
+			rate1, err1 := exchange(currencyFrom, MainCurrency)
+			if err1 != nil {
+				err = err1
+				return
+			}
+			rate2, err2 := exchange(MainCurrency, currencyTo)
+			if err2 != nil {
+				err = err2
+				return
+			}
+			err = nil
+			rate = rate1 * rate2
+		}
+		err := s.ExchangeRate().Create(&model.ExchangeRate{IdCurrencyFrom: currencyFrom.Id, IdCurrencyTo: currencyTo.Id, Rate: rate, Date: time.Now()})
+		if err != nil {
+			return 0, err
+		}
+	}
+	return
+}
 
 func exchange(currencyFrom *model.Currency, currencyTo *model.Currency) (rate float32, err error) {
 	defer func() {
@@ -29,23 +59,10 @@ func exchange(currencyFrom *model.Currency, currencyTo *model.Currency) (rate fl
 	return
 }
 
-func Exchange(currencyFrom *model.Currency, account *model.Account) (rate float32, err error) {
-
-	rate, err = exchange(currencyFrom, &account.Currency)
+func Exchange(currencyFrom *model.Currency, account *model.Account, s store.Store) (rate float32, err error) {
+	rate, err = getRate(currencyFrom, &account.Currency, s)
 	if err != nil {
-
-		rate1, err1 := exchange(currencyFrom, MainCurrency)
-		if err1 != nil {
-			err = err1
-			return
-		}
-		rate2, err2 := exchange(MainCurrency, &account.Currency)
-		if err2 != nil {
-			err = err2
-			return
-		}
-		err = nil
-		rate = rate1 * rate2
+		return 0, err
 	}
 
 	if account.AccountType.Id.ToString() == "Card" {

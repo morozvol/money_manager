@@ -64,13 +64,13 @@ func Test_Find(t *testing.T) {
 		{
 			"find exist user",
 			store,
-			int(u.Id),
+			u.Id,
 			u, false,
 		},
 		{
 			"find non-existent user",
 			store,
-			int(u.Id + 1),
+			u.Id + 1,
 			nil,
 			true,
 		},

@@ -1,6 +1,6 @@
 package model
 
-type AccountTypes int64
+type AccountTypes int
 
 const (
 	Card AccountTypes = iota + 1
@@ -13,8 +13,8 @@ func (at AccountTypes) ToString() string {
 }
 
 type AccountType struct {
-	Id          AccountTypes `db:"id"`
-	Name        string       `db:"name"`
-	Symbol      string       `db:"symbol"`
-	Description string       `db:"description"`
+	Id          AccountTypes `db:"id"          json:"id"`
+	Name        string       `db:"name"        json:"name"        validate:"required"`
+	Symbol      string       `db:"symbol"      json:"symbol"      validate:"required"`
+	Description string       `db:"description" json:"description" validate:"required"`
 }

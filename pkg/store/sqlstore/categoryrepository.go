@@ -2,14 +2,17 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/morozvol/money_manager/pkg/model"
+	"github.com/morozvol/money_manager/pkg/model/category_tree"
 )
 
 type CategoryRepository struct {
 	store *Store
 }
+
 type category struct {
-	Id       int64                      `db:"id"`
+	Id       int                        `db:"id"`
 	Name     string                     `db:"name"`
 	Type     model.OperationPaymentType `db:"type"`
 	IdOwner  sql.NullInt64              `db:"id_owner"`
@@ -38,27 +41,48 @@ func (r *CategoryRepository) Create(c *model.Category) error {
 	if err != nil {
 		return err
 	}
-	c.Id = int64(lastInsertId)
+	c.Id = lastInsertId
 	return nil
 }
 
-func (r *CategoryRepository) Get(userId int) ([]model.Category, error) {
+func (r *CategoryRepository) Get(userId int) (*category_tree.CategoryTree, error) {
 	c := category{}
+	var tree *category_tree.CategoryTree
+	var node *category_tree.Node
 	res := make([]model.Category, 0)
-	rows, err := r.store.db.Queryx("SELECT id, name, type, id_owner, id_parent_category, is_end FROM category WHERE (id_owner IS NULL OR id_owner = $1) AND is_system = false;", userId)
+	rows, err := r.store.db.Queryx("SELECT id, name, type, id_owner, id_parent_category, is_end FROM category WHERE (id_owner IS NULL OR id_owner = $1)", userId)
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
-		err := rows.StructScan(&c)
+		err = rows.StructScan(&c)
 		if err != nil {
 			return nil, err
 		}
 		res = append(res, c.toModel())
 	}
-	return res, nil
-}
 
+	for _, rc := range res {
+		if rc.Id == 1 {
+			tree = category_tree.NewCategoryTree(category_tree.NewNode(rc, tree))
+			node = tree.Root
+		}
+	}
+	FillNode(node, res, tree)
+	fmt.Printf("%#v", tree)
+	return tree, nil
+}
+func FillNode(node *category_tree.Node, res []model.Category, tree *category_tree.CategoryTree) {
+	for _, cc := range res {
+		if cc.IdParent == node.Category.Id {
+			newNode := category_tree.NewNode(cc, tree)
+			node.AddChild(newNode)
+			if !cc.IsEnd {
+				FillNode(newNode, res, tree)
+			}
+		}
+	}
+}
 func (r *CategoryRepository) GetSystem() ([]model.Category, error) {
 	c := category{}
 	res := make([]model.Category, 0)
@@ -74,4 +98,12 @@ func (r *CategoryRepository) GetSystem() ([]model.Category, error) {
 		res = append(res, c.toModel())
 	}
 	return res, nil
+}
+
+func (r *CategoryRepository) Delete(id int) error {
+	_, err := r.store.db.Queryx("DELETE FROM category WHERE id = $1;", id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
